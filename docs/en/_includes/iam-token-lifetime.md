@@ -1,0 +1,1 @@
+The IAM token [lifetime](../iam/concepts/authorization/iam-token.md#lifetime) does not exceed {{ iam-token-lifetime }}; however, we recommend requesting it more often, such as once per hour.

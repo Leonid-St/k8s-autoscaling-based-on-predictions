@@ -1,0 +1,1 @@
+_Сервис [{{ baremetal-name }}](../../baremetal/) находится на [стадии Preview](../../overview/concepts/launch-stages.md)._

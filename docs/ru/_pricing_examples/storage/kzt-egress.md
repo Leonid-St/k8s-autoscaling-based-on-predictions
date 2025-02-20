@@ -1,0 +1,3 @@
+Например, если цена за 1&nbsp;ГБ исходящего трафика сверх 100&nbsp;ГБ до 1&nbsp;ТБ в месяц составляет {{ sku|KZT|storage.api.network.inet.egress|pricingRate.100|string }}, а за месяц было передано 283&nbsp;ГБ исходящего трафика, то стоимость за месяц составит:
+
+> (283 − 100) × {{ sku|KZT|storage.api.network.inet.egress|pricingRate.100|string }} = 183 × {{ sku|KZT|storage.api.network.inet.egress|pricingRate.100|string }} = {% calc [currency=KZT] round((183 × {{ sku|KZT|storage.api.network.inet.egress|pricingRate.100|number }}) × 100) / 100 %}

@@ -1,0 +1,1 @@
+{% include [resources](../../_qa/managed-kubernetes/resources.md) %}

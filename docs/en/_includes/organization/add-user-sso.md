@@ -1,0 +1,69 @@
+### Add federated users {#add-user-sso}
+
+{% list tabs group=instructions %}
+
+- {{ cloud-center }} interface {#cloud-center}
+
+    {% include [add-users-to-fed](./add-users-to-fed.md) %}
+
+- CLI {#cli}
+
+    {% include [cli-install](../cli-install.md) %}
+
+    {% include [default-catalogue](../default-catalogue.md) %}
+
+    1. View a description of the add user command:
+
+        ```bash
+        yc organization-manager federation saml add-user-accounts --help
+        ```
+
+    1. Add users by listing their name IDs separated by a comma:
+
+        ```bash
+        yc organization-manager federation saml add-user-accounts \
+           --name <federation_name> \
+           --name-ids <list_of_user_name_IDs>
+        ```
+
+- {{ TF }} {#tf}
+
+  {% include [terraform-definition](../../_tutorials/_tutorials_includes/terraform-definition.md) %}
+
+  {% include [terraform-install](../../_includes/terraform-install.md) %}
+
+  1. In the configuration file, describe the parameters of the resources you want to create:
+
+      ```hcl
+      resource "yandex_organizationmanager_saml_federation_user_account" "some_account" {
+        federation_id = "<federation_ID>"
+        name_id       = "<User_name_ID>"
+      }
+      ```
+
+      Where:
+      * `federation_id`: ID of the federation to add the user to.
+      * `name_id`: Name ID of the user.
+
+      For more information about the `yandex_organizationmanager_saml_federation_user_account` resource parameters, see the [provider documentation]({{ tf-provider-resources-link }}/organizationmanager_saml_federation_user_account).
+
+  1. Create resources:
+
+      {% include [terraform-validate-plan-apply](../../_tutorials/_tutorials_includes/terraform-validate-plan-apply.md) %}
+
+      {{ TF }} will create all the required resources. You can check the new resources using the [management console]({{ link-console-main }}) or this [CLI](../../cli/) command:
+
+      ```bash
+      yc organization-manager federations saml \
+        --organization-id <organization_ID> list-user-accounts \
+        --id <federation_ID>
+      ```
+
+- API {#api}
+
+  Use the [addUserAccounts](../../iam/saml/api-ref/Federation/addUserAccounts.md) REST API method for the [Federation](../../iam/saml/api-ref/Federation/index.md) resource or the [FederationService/AddUserAccounts](../../iam/saml/api-ref/grpc/Federation/addUserAccounts.md) gRPC API call and provide the following in the request:
+
+  * Federation ID in the `federationId` parameter.
+  * List of user name IDs in the `nameIds` parameter.
+
+{% endlist %}

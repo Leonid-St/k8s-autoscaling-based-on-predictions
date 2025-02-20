@@ -1,0 +1,1 @@
+Сервисному аккаунту можно [назначать роли](../iam/operations/sa/assign-role-for-sa.md#binding-role-resource) на любые ресурсы в любом облаке, если эти ресурсы относятся к той же организации, что и сервисный аккаунт. Также сервисному аккаунту можно [назначать роли](../iam/operations/sa/assign-role-for-sa.md#binding-role-organization) на саму организацию.

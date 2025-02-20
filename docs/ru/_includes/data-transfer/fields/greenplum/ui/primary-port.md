@@ -1,0 +1,1 @@
+**{{ ui-key.yc-data-transfer.data-transfer.console.form.greenplum.console.form.greenplum.OnPremiseGreenplum.primary_port.title }}** — укажите номер порта, который {{ data-transfer-name }} будет использовать для подключения к первичному хосту-мастеру.

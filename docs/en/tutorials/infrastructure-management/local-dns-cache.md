@@ -1,0 +1,1 @@
+{% include [local-dns-cache](../../_tutorials/infrastructure/local-dns-cache.md) %}

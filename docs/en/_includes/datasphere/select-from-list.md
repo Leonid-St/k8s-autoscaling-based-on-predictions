@@ -1,0 +1,1 @@
+Click ![image](../../_assets/console-icons/person-plus.svg) **{{ ui-key.yc-ui-datasphere.common.add-member }}**. Select one or more users from the list and click **{{ ui-key.yc-ui-datasphere.common.add }}**.

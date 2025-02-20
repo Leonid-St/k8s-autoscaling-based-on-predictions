@@ -1,0 +1,1 @@
+Use API keys if requesting an [IAM token](../../iam/concepts/authorization/iam-token.md) automatically is not an option.

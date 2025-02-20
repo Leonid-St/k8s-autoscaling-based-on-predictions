@@ -1,0 +1,260 @@
+title: Yandex Cloud Desktop
+stage: preview
+href: index.yaml
+items:
+  - name: Getting started
+    href: quickstart.md
+  - name: Step-by-step guides
+    items:
+      - name: All guides
+        href: operations/index.md
+      - name: Desktop groups
+        items:
+          - name: Creating a desktop group
+            href: operations/desktop-groups/create.md
+          - name: Updating a desktop group
+            href: operations/desktop-groups/update.md
+          - name: Changing desktop group permissions
+            href: operations/desktop-groups/update-acl.md
+          - name: Deleting a desktop group
+            href: operations/desktop-groups/delete.md
+      - name: Desktops
+        items:
+          - name: Creating a desktop
+            href: operations/desktops/create.md
+          - name: Connecting to a desktop
+            href: operations/desktops/connect.md
+          - name: Resetting a desktop user password
+            href: operations/desktops/password-reset.md
+          - name: Launching, restarting, and stopping a desktop
+            href: operations/desktops/start-stop.md
+          - name: Updating a desktop
+            href: operations/desktops/update.md
+          - name: Deleting a desktop
+            href: operations/desktops/delete.md
+      - name: Images
+        items:
+          - name: Creating an image from a desktop
+            href: operations/images/create-from-desktop.md
+          - name: Deleting a custom image
+            href: operations/images/delete.md
+      - name: Viewing logs
+        href: operations/logging.md
+      - name: Viewing service resource operations
+        href: operations/operation-logs.md
+  - name: Concepts
+    items:
+      - name: Desktops and their groups
+        href: concepts/desktops-and-groups.md
+      - name: Access control list (ACL)
+        href: concepts/acl.md
+      - name: Disks
+        href: concepts/disks.md
+      - name: Images
+        href: concepts/images.md
+      - name: User desktop showcase
+        href: concepts/showcase.md
+      - name: Quotas and limits
+        href: concepts/limits.md
+  - name: Access management
+    href: security/index.md
+  - name: Pricing policy
+    href: pricing.md
+  - name: CLI reference
+    items:
+      - name: Overview
+        href: cli-ref/index.md
+      - name: desktop
+        items:
+          - name: Overview
+            href: cli-ref/desktop/index.md
+          - name: create
+            href: cli-ref/desktop/create.md
+          - name: delete
+            href: cli-ref/desktop/delete.md
+          - name: get
+            href: cli-ref/desktop/get.md
+          - name: get-rdp-file
+            href: cli-ref/desktop/get-rdp-file.md
+          - name: list
+            href: cli-ref/desktop/list.md
+          - name: list-operations
+            href: cli-ref/desktop/list-operations.md
+          - name: reset-password
+            href: cli-ref/desktop/reset-password.md
+          - name: restart
+            href: cli-ref/desktop/restart.md
+      - name: group
+        items:
+          - name: Overview
+            href: cli-ref/group/index.md
+          - name: add-access-bindings
+            href: cli-ref/group/add-access-bindings.md
+          - name: create
+            href: cli-ref/group/create.md
+          - name: delete
+            href: cli-ref/group/delete.md
+          - name: get
+            href: cli-ref/group/get.md
+          - name: list
+            href: cli-ref/group/list.md
+          - name: list-access-bindings
+            href: cli-ref/group/list-access-bindings.md
+          - name: list-desktops
+            href: cli-ref/group/list-desktops.md
+          - name: list-operations
+            href: cli-ref/group/list-operations.md
+          - name: remove-access-bindings
+            href: cli-ref/group/remove-access-bindings.md
+          - name: set-access-bindings
+            href: cli-ref/group/set-access-bindings.md
+      - name: image
+        items:
+          - name: Overview
+            href: cli-ref/image/index.md
+          - name: copy
+            href: cli-ref/image/copy.md
+          - name: delete
+            href: cli-ref/image/delete.md
+          - name: get
+            href: cli-ref/image/get.md
+          - name: list
+            href: cli-ref/image/list.md
+  - name: API reference
+    items:
+      - name: Authentication with the API
+        href: api-ref/authentication.md
+      - name: gRPC
+        items:
+          - name: Overview
+            href: api-ref/grpc/index.md
+          - name: DesktopGroup
+            items:
+              - name: Overview
+                href: api-ref/grpc/DesktopGroup/index.md
+              - name: Get
+                href: api-ref/grpc/DesktopGroup/get.md
+              - name: List
+                href: api-ref/grpc/DesktopGroup/list.md
+              - name: ListDesktops
+                href: api-ref/grpc/DesktopGroup/listDesktops.md
+              - name: ListOperations
+                href: api-ref/grpc/DesktopGroup/listOperations.md
+              - name: Create
+                href: api-ref/grpc/DesktopGroup/create.md
+              - name: Delete
+                href: api-ref/grpc/DesktopGroup/delete.md
+              - name: ListAccessBindings
+                href: api-ref/grpc/DesktopGroup/listAccessBindings.md
+              - name: SetAccessBindings
+                href: api-ref/grpc/DesktopGroup/setAccessBindings.md
+              - name: UpdateAccessBindings
+                href: api-ref/grpc/DesktopGroup/updateAccessBindings.md
+          - name: DesktopImage
+            items:
+              - name: Overview
+                href: api-ref/grpc/DesktopImage/index.md
+              - name: List
+                href: api-ref/grpc/DesktopImage/list.md
+              - name: Get
+                href: api-ref/grpc/DesktopImage/get.md
+              - name: Copy
+                href: api-ref/grpc/DesktopImage/copy.md
+              - name: CopyFromDesktop
+                href: api-ref/grpc/DesktopImage/copyFromDesktop.md
+              - name: Delete
+                href: api-ref/grpc/DesktopImage/delete.md
+          - name: Desktop
+            items:
+              - name: Overview
+                href: api-ref/grpc/Desktop/index.md
+              - name: Get
+                href: api-ref/grpc/Desktop/get.md
+              - name: GetRdpFile
+                href: api-ref/grpc/Desktop/getRdpFile.md
+              - name: List
+                href: api-ref/grpc/Desktop/list.md
+              - name: ListOperations
+                href: api-ref/grpc/Desktop/listOperations.md
+              - name: Create
+                href: api-ref/grpc/Desktop/create.md
+              - name: Delete
+                href: api-ref/grpc/Desktop/delete.md
+              - name: ResetPassword
+                href: api-ref/grpc/Desktop/resetPassword.md
+              - name: Restart
+                href: api-ref/grpc/Desktop/restart.md
+          - name: Operation
+            items:
+              - name: Overview
+                href: api-ref/grpc/Operation/index.md
+              - name: Get
+                href: api-ref/grpc/Operation/get.md
+              - name: Cancel
+                href: api-ref/grpc/Operation/cancel.md
+      - name: REST
+        items:
+          - name: Overview
+            href: api-ref/index.md
+          - name: DesktopGroup
+            items:
+              - name: Overview
+                href: api-ref/DesktopGroup/index.md
+              - name: Get
+                href: api-ref/DesktopGroup/get.md
+              - name: List
+                href: api-ref/DesktopGroup/list.md
+              - name: ListDesktops
+                href: api-ref/DesktopGroup/listDesktops.md
+              - name: ListOperations
+                href: api-ref/DesktopGroup/listOperations.md
+              - name: Create
+                href: api-ref/DesktopGroup/create.md
+              - name: Delete
+                href: api-ref/DesktopGroup/delete.md
+              - name: ListAccessBindings
+                href: api-ref/DesktopGroup/listAccessBindings.md
+              - name: SetAccessBindings
+                href: api-ref/DesktopGroup/setAccessBindings.md
+              - name: UpdateAccessBindings
+                href: api-ref/DesktopGroup/updateAccessBindings.md
+          - name: DesktopImage
+            items:
+              - name: Overview
+                href: api-ref/DesktopImage/index.md
+              - name: List
+                href: api-ref/DesktopImage/list.md
+              - name: Get
+                href: api-ref/DesktopImage/get.md
+              - name: Copy
+                href: api-ref/DesktopImage/copy.md
+              - name: CopyFromDesktop
+                href: api-ref/DesktopImage/copyFromDesktop.md
+              - name: Delete
+                href: api-ref/DesktopImage/delete.md
+          - name: Desktop
+            items:
+              - name: Overview
+                href: api-ref/Desktop/index.md
+              - name: Get
+                href: api-ref/Desktop/get.md
+              - name: GetRdpFile
+                href: api-ref/Desktop/getRdpFile.md
+              - name: List
+                href: api-ref/Desktop/list.md
+              - name: ListOperations
+                href: api-ref/Desktop/listOperations.md
+              - name: Create
+                href: api-ref/Desktop/create.md
+              - name: Delete
+                href: api-ref/Desktop/delete.md
+              - name: ResetPassword
+                href: api-ref/Desktop/resetPassword.md
+          - name: Operation
+            items:
+              - name: Overview
+                href: api-ref/Operation/index.md
+              - name: Get
+                href: api-ref/Operation/get.md
+              - name: Cancel
+                href: api-ref/Operation/cancel.md

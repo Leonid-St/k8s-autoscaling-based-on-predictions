@@ -1,0 +1,54 @@
+title: Yandex Object Storage
+description:
+  - >-
+    Yandex Object Storage is a universal, scalable data storage solution. It is
+    equally suited for high-load services requiring reliable and fast access to
+    data and for projects with moderate storage infrastructure requirements.
+  - >-
+    With Object Storage, you can: <ul><li>Store data of any format as <a
+    href="/docs/storage/concepts/object">objects</a> with access by text
+    ID.</li> <li>Use different <a
+    href="/docs/storage/concepts/storage-class">storage classes</a> for objects
+    and manage their <a
+    href="/docs/storage/concepts/lifecycles">lifecycle</a>.</li> <li>Store <a
+    href="/docs/storage/concepts/multipart">large objects</a> of several
+    terabytes in size.</li> <li>Publish a static <a
+    href="/docs/storage/concepts/hosting">website</a>.</li></ul>
+  - >-
+    The <a href="/docs/storage/s3/">Yandex Object Storage HTTP API</a> is
+    compatible with the Amazon S3 API, which means there are many object storage
+    management <a href="/docs/storage/tools/">tools</a> you can use.
+  - >-
+    The Yandex Cloud infrastructure is <a
+    href="https://storage.yandexcloud.net/yc-compliance/conformance_ru_pdp.pdf">protected</a>
+    pursuant to the Russian Federal Law No. 152-FZ on Personal Data.
+  - >-
+    The service is subject to a <a
+    href="https://yandex.com/legal/cloud_sla">service level agreement</a>. The
+    service level is set out in the document titled <a
+    href="https://yandex.com/legal/cloud_sla_storage">Service level for Yandex
+    Object Storage</a>.
+nav:
+  title: Yandex Object Storage
+meta:
+  title: Yandex Object Storage
+  description: Yandex Object Storage is a universal, scalable data storage solution.
+links:
+  - title: Getting started
+    description: Create your first bucket and upload data
+    href: quickstart/
+  - title: Step-by-step guides
+    description: How to perform routine operations
+    href: operations/
+  - title: Concepts
+    description: Learn more about Container Registry's concepts and resources
+    href: concepts/
+  - title: Quotas and limits
+    description: Technical and organizational limitations
+    href: concepts/limits
+  - title: Access management
+    description: Configure access permissions to use the service
+    href: security/
+  - title: Pricing policy
+    description: Service pricing and cost calculations
+    href: pricing

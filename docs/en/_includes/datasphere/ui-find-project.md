@@ -1,0 +1,1 @@
+Select the relevant project in your community or on the {{ ml-platform-name }} [homepage]({{ link-datasphere-main }}) in the **{{ ui-key.yc-ui-datasphere.main-page.recent-projects }}** tab.

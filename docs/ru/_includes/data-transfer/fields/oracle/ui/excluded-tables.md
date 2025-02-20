@@ -1,0 +1,1 @@
+**{{ ui-key.yc-data-transfer.data-transfer.console.form.oracle.console.form.oracle.OracleTableFilter.exclude_tables.title }}** — данные таблиц из этого списка передаваться не будут. Задается с помощью регулярных выражений.

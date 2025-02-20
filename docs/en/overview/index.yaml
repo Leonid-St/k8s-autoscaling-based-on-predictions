@@ -1,0 +1,62 @@
+title: Yandex Cloud overview
+description:
+  - >-
+    Yandex Cloud is a suite of services allowing you to quickly and securely get
+    as much computing power as you need on a pay-as-you-go basis. You access the
+    computing power over the internet. This approach to computing resource usage
+    is called <i>cloud computing</i>.
+  - >-
+    Cloud computing can replace or supplement traditional data centers and local
+    on-premise servers. Yandex Cloud assumes full responsibility for maintaining
+    the health and performance of the cloud platform's hardware and software.
+  - >-
+    Yandex Cloud offers different categories of cloud resources, e.g., virtual
+    machines, disks, and databases. You can manage the resources under each
+    category using a dedicated service.
+  - >-
+    The Yandex Cloud infrastructure <a
+    href="https://storage.yandexcloud.net/yc-compliance/conformance_ru_pdp.pdf">is
+    protected</a> pursuant to the Russian Federal Law No. 152-FZ on Personal
+    Data.
+meta:
+  title: Yandex Cloud overview
+  description: >-
+    Yandex Cloud is a suite of services allowing you to quickly and securely get
+    as much computing power as you need on a pay-as-you-go basis.
+links:
+  - title: Yandex Cloud services
+    description: ''
+    href: concepts/services
+  - title: Mobile app
+    description: ''
+    href: mobile-app/
+  - title: Regions
+    description: ''
+    href: concepts/region
+  - title: Availability zones
+    description: ''
+    href: concepts/geo-scope
+  - title: Getting started
+    description: ''
+    href: quickstart
+  - title: Release stages
+    description: ''
+    href: concepts/launch-stages
+  - title: Quotas and limits
+    description: ''
+    href: concepts/quotas-limits
+  - title: API
+    description: ''
+    href: api
+  - title: SDK
+    description: ''
+    href: sdk/overview
+  - title: Service Level Agreement
+    description: ''
+    href: sla
+  - title: Troubleshooting
+    description: ''
+    href: qa
+  - title: Cloud terminology
+    description: ''
+    href: ../glossary/

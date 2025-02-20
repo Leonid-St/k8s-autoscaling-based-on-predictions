@@ -1,0 +1,56 @@
+title: Yandex Managed Service for Kubernetes®
+description:
+  - >-
+    Managed Service for Kubernetes® provides an environment for managing <a
+    href="/docs/glossary/containerization">containerized applications</a> in the
+    Yandex Cloud infrastructure. Deploy, scale, and manage applications in
+    containers using Kubernetes.
+  - >-
+    With Managed Service for Kubernetes, you can provide access to applications
+    using various public and private <a
+    href="/docs/managed-kubernetes/concepts/service">services</a> and <a
+    href="/docs/managed-kubernetes/operations/applications/marketplace">Cloud
+    Marketplace apps</a>. All data is securely stored and replicated in the
+    Yandex Cloud, but you can create additional backups of Kubernetes data and
+    store them in <a href="/docs/storage/">Object Storage</a> or another
+    storage. To manage Kubernetes, use <a
+    href="https://kubernetes.io/docs/tasks/tools/#kubectl">kubectl</a>.
+  - >-
+    The Yandex Cloud infrastructure is <a
+    href="https://storage.yandexcloud.net/yc-compliance/conformance_ru_pdp.pdf">protected</a>
+    pursuant to the Russian Federal Law No. 152-FZ on Personal Data. Managed
+    Service for Kubernetes is subject to the <a
+    href="https://yandex.com/legal/cloud_sla">service level agreement</a>. The
+    service level is defined in <a
+    href="https://yandex.ru/legal/cloud_sla_kb">Yandex Managed Service for
+    Kubernetes® Service Level</a>.
+meta:
+  title: Yandex Managed Service for Kubernetes
+  description: >-
+    Managed Service for Kubernetes provides an environment for managing
+    containerized applications in the Yandex Cloud infrastructure.
+links:
+  - title: Getting started
+    description: Create your first Kubernetes cluster
+    href: quickstart
+  - title: Step-by-step guide
+    description: How to perform routine operations
+    href: operations/
+  - title: Concepts
+    description: Overview of how the service works
+    href: concepts/
+  - title: API reference
+    description: HTTP API method descriptions
+    href: managed-kubernetes/api-ref/
+  - title: Quotas and limits
+    description: Technical and organizational restrictions
+    href: concepts/limits
+  - title: Access management
+    description: Set up access permissions to work with the service
+    href: security/
+  - title: Pricing policy
+    description: Service pricing and cost calculations
+    href: pricing
+  - title: FAQ
+    description: Answers to frequently asked questions
+    href: qa/all

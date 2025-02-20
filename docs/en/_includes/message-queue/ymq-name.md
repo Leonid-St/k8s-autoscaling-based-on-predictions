@@ -1,0 +1,1 @@
+The name may contain lowercase Latin letters, numbers, hyphens, and underscores. The FIFO queue name must end with the `.fifo` suffix. The name may not be longer than 80 characters.

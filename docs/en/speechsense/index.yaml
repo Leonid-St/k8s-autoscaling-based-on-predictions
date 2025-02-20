@@ -1,0 +1,40 @@
+title: '{{ speechsense-full-name }}'
+description:
+  - >-
+    {{ speechsense-full-name }} is a service that can help your business get
+    contact center analytics going.
+  - >-
+    {{ speechsense-full-name }} is built around Yandex's Cloud ML technologies:
+    {{ speechkit-full-name }} will perform speech recognition, collect dialog
+    statistics, and identify keywords, whereas {{ yagpt-full-name }} will help
+    summarize the data.
+  - >-
+    {{ speechsense-full-name }} is subject to a <a
+    href="https://yandex.com/legal/cloud_sla">service level agreement</a>. {{
+    speechsense-full-name }} service level is detailed in the <a
+    href="https://yandex.com/legal/cloud_sla_speechsense/">{{
+    speechsense-full-name }} Service Level</a> document.
+  - >-
+    For terms of use, see the <a
+    href="https://yandex.com/legal/cloud_terms_speechsense">{{
+    speechsense-full-name }} Terms of Use</a>.
+meta:
+  title: '{{ speechsense-full-name }}'
+links:
+  - title: Getting started
+    description: >-
+      Upload the first record of the agent's dialog with a customer to {{
+      speechsense-full-name }}
+    href: quickstart
+  - title: Step-by-step guides
+    description: How to perform routine operations
+    href: operations/index
+  - title: Concepts
+    description: Learn about basic concepts and how the service works
+    href: concepts/resources-hierarchy
+  - title: Access management
+    description: Set up access permissions to work with the service
+    href: security/
+  - title: Pricing policy
+    description: Service pricing and cost calculations
+    href: pricing

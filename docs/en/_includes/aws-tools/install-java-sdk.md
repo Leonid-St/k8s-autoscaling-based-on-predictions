@@ -1,0 +1,1 @@
+To install the AWS SDK for Java v.1.x, use the [instructions](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-install.html) on the vendor's website.

@@ -1,0 +1,1 @@
+`allow_stopping_for_update`: Permission to stop the VM for updates. Set to `true` if you plan to change your VM's network settings or computing resources using {{ TF }}. The default value is `false`.

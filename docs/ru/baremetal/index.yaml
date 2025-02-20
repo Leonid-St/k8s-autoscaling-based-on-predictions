@@ -1,0 +1,25 @@
+title: Yandex BareMetal
+description:
+  - <i>Yandex BareMetal находится на стадии Preview.</i>
+  - Yandex BareMetal позволяет полностью арендовать физический сервер.
+meta:
+  title: Yandex BareMetal
+links:
+  - title: Начало работы
+    description: Арендуйте свой первый сервер
+    href: quickstart
+  - title: Пошаговые инструкции
+    description: Инструкции по выполнению рутинных операций
+    href: operations/
+  - title: Концепции
+    description: Концепции и общее устройство сервиса
+    href: concepts/
+  - title: Квоты и лимиты
+    description: Технические и организационные ограничения сервиса
+    href: concepts/limits
+  - title: Управление доступом
+    description: Настройте права доступа для работы с сервисом
+    href: security/
+  - title: Правила тарификации
+    description: Цены и правила расчета стоимости услуг сервиса
+    href: pricing

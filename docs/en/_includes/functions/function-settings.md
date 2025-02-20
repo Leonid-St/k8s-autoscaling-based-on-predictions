@@ -1,0 +1,2 @@
+* [{{ ui-key.yacloud.serverless-functions.triggers.form.field_function-tag }}](../../functions/concepts/function.md#tag).
+* [{{ ui-key.yacloud.serverless-functions.triggers.form.field_function_service-account }}](../../iam/concepts/users/service-accounts.md) to invoke the function under.

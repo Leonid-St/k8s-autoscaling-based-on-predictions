@@ -1,0 +1,1 @@
+Для установки AWS SDK для Go воспользуйтесь [инструкцией](https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/getting-started) на сайте производителя.

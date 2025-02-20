@@ -1,0 +1,1 @@
+[Install Helm](https://helm.sh/docs/intro/install/) v3.8.0 or higher.

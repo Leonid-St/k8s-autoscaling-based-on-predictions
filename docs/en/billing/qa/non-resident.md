@@ -1,0 +1,1 @@
+{% include [non-resident](../../_qa/billing/non-resident.md) %}

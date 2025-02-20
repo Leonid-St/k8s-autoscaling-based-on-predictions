@@ -1,0 +1,7 @@
+title: '{{ mtr-full-name }}'
+href: index.yaml
+stage: preview
+noIndex: true
+items:
+  - name: Pricing policy
+    href: pricing.md

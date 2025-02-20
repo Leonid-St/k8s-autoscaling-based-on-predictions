@@ -1,0 +1,1 @@
+**{{ ui-key.yc-data-transfer.data-transfer.console.form.clickhouse.console.form.clickhouse.ClickHouseOnPremise.native_port.title }}**: Set the number of the native port that {{ data-transfer-name }} will use for the connection.

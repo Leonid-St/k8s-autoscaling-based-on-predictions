@@ -1,0 +1,1 @@
+When selecting a disk to attach to your VM, you can specify whether to delete that disk when deleting the VM. You can enable this option when creating or updating a VM, or when attaching a new disk to it.

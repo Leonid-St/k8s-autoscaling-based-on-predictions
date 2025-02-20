@@ -1,0 +1,1 @@
+Scheduled snapshots may be created with a slight delay depending on the current Compute Cloud load.

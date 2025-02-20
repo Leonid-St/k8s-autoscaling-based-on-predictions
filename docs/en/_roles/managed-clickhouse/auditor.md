@@ -1,0 +1,1 @@
+The `managed-clickhouse.auditor` role allows you to view information about [ClickHouse® clusters](../../managed-clickhouse/concepts/index.md), as well as [quotas](../../managed-clickhouse/concepts/limits.md#mch-quotas) and resource operations for Managed Service for ClickHouse®.

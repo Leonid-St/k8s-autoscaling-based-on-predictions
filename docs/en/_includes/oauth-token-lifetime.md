@@ -1,0 +1,1 @@
+An OAuth token lives 12 months. After that, you need to [get a new one]({{ link-cloud-oauth }}) and get authenticated again.

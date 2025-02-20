@@ -1,0 +1,1 @@
+After you spend the free amount of services, you will be charged at the applicable rate. The unused balance of free services is reset at the end of the month.

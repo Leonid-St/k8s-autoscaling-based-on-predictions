@@ -1,0 +1,1 @@
+The DB name may contain Latin letters, numbers, hyphens, and underscores. The name may be up to 63 characters long. Such names as `mysql`, `sys`, `information_schema`, and `performance_schema` are reserved for {{ mmy-name }}. You cannot create DBs with these names.

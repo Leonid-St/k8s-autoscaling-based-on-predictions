@@ -1,0 +1,1 @@
+To run a project, click **{{ ui-key.yc-ui-datasphere.project-page.project-card.go-to-jupyter }}**.

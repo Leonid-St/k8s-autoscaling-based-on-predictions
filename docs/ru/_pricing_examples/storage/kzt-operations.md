@@ -1,0 +1,3 @@
+Например, если цена за 10&nbsp;000 операций GET в стандартном хранилище в месяц составляет {{ sku|KZT|storage.api.get.standard|pricingRate.10|string }}, количество операций GET за месяц — 245&nbsp;000, то суммарная стоимость операций с данными за месяц составит:
+
+> ((245&nbsp;000 − 100&nbsp;000) / 10&nbsp;000) × {{ sku|KZT|storage.api.get.standard|pricingRate.10|string }} = (145&nbsp;000 / 10&nbsp;000) × {{ sku|KZT|storage.api.get.standard|pricingRate.10|string }} = {% calc [currency=KZT] round(((145000 / 10000) × {{ sku|KZT|storage.api.get.standard|pricingRate.10|number }}) × 100) / 100 %}

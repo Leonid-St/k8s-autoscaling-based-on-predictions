@@ -1,0 +1,3 @@
+For example, if the price per 1 GB of outgoing traffic above 100 GB and up to 1 TB per month is {{ sku|USD|storage.api.network.inet.egress|pricingRate.100|string }}, with 283 GB of outgoing traffic per month, your monthly cost will be:
+
+> (283 − 100) × {{ sku|USD|storage.api.network.inet.egress|pricingRate.100|string }} = 183 × {{ sku|USD|storage.api.network.inet.egress|pricingRate.100|string }} = {% calc [currency=USD] 183 × {{ sku|USD|storage.api.network.inet.egress|pricingRate.100|number }} %}

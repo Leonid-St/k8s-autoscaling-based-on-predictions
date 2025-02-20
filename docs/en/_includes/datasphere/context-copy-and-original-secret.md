@@ -1,0 +1,1 @@
+A copied secret is not bound to the original: you can edit and delete the former without affecting the latter.

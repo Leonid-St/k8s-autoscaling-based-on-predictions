@@ -1,0 +1,1 @@
+Перейдите в сервис [**{{ billing-name }}**]({{ link-console-billing }}).

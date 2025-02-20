@@ -1,0 +1,1 @@
+To verify your bank card, we will hold a small amount (1.30 USD) in your account. This amount will not be debited and will be released as soon as the verification is complete. The time required to release the money may vary from bank to bank.

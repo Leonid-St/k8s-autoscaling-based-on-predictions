@@ -1,0 +1,1 @@
+**{{ ui-key.yc-data-transfer.data-transfer.console.form.greenplum.console.form.greenplum.OnPremiseGreenplum.primary_host.title }}** — укажите IP-адрес или FQDN первичного хоста-мастера, к которому необходимо подключиться.

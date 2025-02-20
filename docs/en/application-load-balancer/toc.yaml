@@ -1,0 +1,621 @@
+title: Yandex Application Load Balancer
+href: index.yaml
+items:
+  - name: Getting started
+    href: quickstart.md
+  - name: Step-by-step guides
+    items:
+      - name: All guides
+        href: operations/index.md
+      - name: Creating {{ alb-name }} infrastructure through a wizard
+        href: quickstart-wizard.md
+      - name: Target groups
+        items:
+          - name: Creating a target group
+            href: operations/target-group-create.md
+          - name: Getting information about a target group
+            href: operations/target-group-get.md
+          - name: Editing a target group
+            href: operations/target-group-update.md
+          - name: Deleting a target group
+            href: operations/target-group-delete.md
+      - name: Backend groups
+        items:
+          - name: Creating a backend group
+            href: operations/backend-group-create.md
+          - name: Getting information about a backend group
+            href: operations/backend-group-get.md
+          - name: Editing a backend group
+            href: operations/backend-group-update.md
+          - name: Deleting a backend group
+            href: operations/backend-group-delete.md
+      - name: HTTP routers
+        items:
+          - name: Creating an HTTP router for HTTP traffic
+            href: operations/http-router-create.md
+          - name: Creating an HTTP router for gRPC traffic
+            href: operations/http-router-create-grpc.md
+          - name: Getting information about an HTTP router
+            href: operations/http-router-get.md
+          - name: Editing an HTTP router
+            href: operations/http-router-update.md
+          - name: Deleting an HTTP router
+            href: operations/http-router-delete.md
+      - name: L7 load balancers
+        items:
+          - name: Creating an L7 load balancer
+            href: operations/application-load-balancer-create.md
+          - name: Editing an L7 load balancer
+            href: operations/application-load-balancer-update.md
+          - name: Getting information about an L7 load balancer
+            href: operations/application-load-balancer-get.md
+          - name: Viewing L7 load balancer statistics
+            href: operations/application-load-balancer-get-stats.md
+          - name: Viewing L7 load balancer logs
+            href: operations/application-load-balancer-get-logs.md
+          - name: Setting up L7 load balancer logging
+            href: operations/application-load-balancer-manage-logs.md
+          - name: Getting log group ID of an L7 load balancer
+            href: operations/application-load-balancer-get-log-group-id.md
+          - name: Stopping and starting an L7 load balancer
+            href: operations/application-load-balancer-stop-and-start.md
+          - name: Moving a VM to a target group in a new availability zone
+            href: operations/application-load-balancer-relocate.md
+          - name: Deleting an L7 load balancer
+            href: operations/application-load-balancer-delete.md
+      - name: Viewing service resource operations
+        href: operations/operation-logs.md
+  - name: Tutorials
+    items:
+      - name: All tutorials
+        href: tutorials/index.md
+      - name: Setting up virtual hosting
+        href: tutorials/virtual-hosting.md
+      - name: Creating an L7 load balancer with DDoS protection
+        items:
+          - name: Overview
+            href: tutorials/alb-with-ddos-protection/index.md
+          - name: Management console, CLI
+            href: tutorials/alb-with-ddos-protection/console.md
+          - name: '{{ TF }}'
+            href: tutorials/alb-with-ddos-protection/terraform.md
+      - name: >-
+          Migrating services from a NLB to an L7 ALB for DDoS protection using
+          {{ sws-name }}
+        items:
+          - name: Overview
+            href: tutorials/migration-from-nlb-to-alb/index.md
+          - name: NLB with target resources from VMs
+            href: tutorials/migration-from-nlb-to-alb/nlb-with-target-resource-vm.md
+          - name: NLB with target resources from an instance group
+            href: >-
+              tutorials/migration-from-nlb-to-alb/nlb-with-target-resource-group-vm.md
+          - name: NLB with target resources from a {{ managed-k8s-name }} cluster
+            href: >-
+              tutorials/migration-from-nlb-to-alb/nlb-with-target-resource-k8s.md
+          - name: NLB as a target resource for an ALB
+            href: tutorials/migration-from-nlb-to-alb/nlb-as-target-resource-alb.md
+      - name: Integrating an L7 load balancer with CDN and Object Storage
+        href: tutorials/cdn-storage-integration.md
+      - name: Blue-green and canary deployment of service versions
+        href: tutorials/blue-green-canary-deployment.md
+      - name: Terminating TLS connections
+        items:
+          - name: Overview
+            href: tutorials/tls-termination/index.md
+          - name: Management console
+            href: tutorials/tls-termination/console.md
+          - name: '{{ TF }}'
+            href: tutorials/tls-termination/terraform.md
+      - name: Writing load balancer logs to {{ PG }}
+        href: tutorials/logging.md
+      - name: >-
+          Deploying and load testing a gRPC service with scaling in {{
+          managed-k8s-full-name }}
+        href: tutorials/load-testing-grpc-autoscaling.md
+      - name: Setting up Gateway API in {{ managed-k8s-full-name }}
+        href: tutorials/gateway-api.md
+      - name: >-
+          Configuring an {{ alb-name }} L7 load balancer using an Ingress
+          controller
+        href: tutorials/alb-ingress-controller.md
+      - name: >-
+          Configuring logging for an {{ alb-name }} L7 load balancer using an
+          Ingress controller
+        href: tutorials/alb-ingress-controller-log-options.md
+      - name: Fault-tolerant website with load balancing using {{ alb-name }}
+        href: tutorials/application-load-balancer-website.md
+      - name: >-
+          Health checking your apps in a {{ managed-k8s-name }} cluster using an
+          {{ alb-name }} L7 load balancer
+        href: tutorials/custom-health-checks.md
+      - name: >-
+          Implementing a secure high-availability network infrastructure with a
+          dedicated DMZ based on the next-generation firewall
+        href: tutorials/high-accessible-dmz.md
+      - name: >-
+          Creating an {{ alb-name }} L7 load balancer with a {{ sws-name }}
+          security profile
+        href: tutorials/balancer-with-sws-profile.md
+  - name: Concepts
+    items:
+      - name: Overview
+        href: concepts/index.md
+      - name: Load balancers
+        href: concepts/application-load-balancer.md
+      - name: HTTP routers
+        href: concepts/http-router.md
+      - name: Backend groups
+        href: concepts/backend-group.md
+      - name: Target groups
+        href: concepts/target-group.md
+      - name: Quotas and limits
+        href: concepts/limits.md
+      - name: Tips for configuring health checks
+        href: concepts/best-practices.md
+  - name: Tools for {{ managed-k8s-name }}
+    items:
+      - name: Overview
+        href: tools/index.md
+      - name: Ingress controller
+        items:
+          - name: Overview
+            href: tools/k8s-ingress-controller/index.md
+          - name: How it works
+            href: tools/k8s-ingress-controller/principles.md
+          - name: Installing an Ingress controller
+            href: operations/k8s-ingress-controller-install.md
+          - name: Updating an Ingress controller
+            href: operations/k8s-ingress-controller-upgrade.md
+          - name: Resource configuration
+            items:
+              - name: Ingress
+                href: k8s-ref/ingress.md
+              - name: HttpBackendGroup
+                href: k8s-ref/http-backend-group.md
+              - name: GrpcBackendGroup
+                href: k8s-ref/grpc-backend-group.md
+              - name: IngressClass
+                href: k8s-ref/ingress-class.md
+              - name: Service for Ingress
+                href: k8s-ref/service-for-ingress.md
+      - name: Gateway API
+        items:
+          - name: Overview
+            href: tools/k8s-gateway-api/index.md
+          - name: Installing Gateway API
+            href: operations/k8s-gateway-api-install.md
+          - name: Resource configuration
+            items:
+              - name: Gateway
+                href: k8s-ref/gateway.md
+              - name: HTTPRoute
+                href: k8s-ref/http-route.md
+              - name: TLSRoute
+                href: k8s-ref/tls-route.md
+              - name: Service for Gateway API
+                href: k8s-ref/service-for-gateway.md
+      - name: Configuring security groups
+        href: tools/k8s-ingress-controller/security-groups.md
+      - name: Working with service accounts
+        href: tools/k8s-ingress-controller/service-account.md
+      - name: Creating or updating resources based on a configuration
+        href: operations/k8s-ingress-controller-apply.md
+  - name: Access management
+    href: security/index.md
+  - name: Pricing policy
+    href: pricing.md
+  - name: CLI reference
+    items:
+      - name: Overview
+        href: cli-ref/index.md
+      - name: backend-group
+        items:
+          - name: Overview
+            href: cli-ref/backend-group/index.md
+          - name: add-grpc-backend
+            href: cli-ref/backend-group/add-grpc-backend.md
+          - name: add-http-backend
+            href: cli-ref/backend-group/add-http-backend.md
+          - name: add-stream-backend
+            href: cli-ref/backend-group/add-stream-backend.md
+          - name: create
+            href: cli-ref/backend-group/create.md
+          - name: delete
+            href: cli-ref/backend-group/delete.md
+          - name: delete-grpc-backend
+            href: cli-ref/backend-group/delete-grpc-backend.md
+          - name: delete-http-backend
+            href: cli-ref/backend-group/delete-http-backend.md
+          - name: delete-stream-backend
+            href: cli-ref/backend-group/delete-stream-backend.md
+          - name: get
+            href: cli-ref/backend-group/get.md
+          - name: list
+            href: cli-ref/backend-group/list.md
+          - name: update
+            href: cli-ref/backend-group/update.md
+          - name: update-grpc-backend
+            href: cli-ref/backend-group/update-grpc-backend.md
+          - name: update-http-backend
+            href: cli-ref/backend-group/update-http-backend.md
+          - name: update-stream-backend
+            href: cli-ref/backend-group/update-stream-backend.md
+      - name: http-router
+        items:
+          - name: Overview
+            href: cli-ref/http-router/index.md
+          - name: create
+            href: cli-ref/http-router/create.md
+          - name: delete
+            href: cli-ref/http-router/delete.md
+          - name: get
+            href: cli-ref/http-router/get.md
+          - name: list
+            href: cli-ref/http-router/list.md
+          - name: update
+            href: cli-ref/http-router/update.md
+      - name: load-balancer
+        items:
+          - name: Overview
+            href: cli-ref/load-balancer/index.md
+          - name: add-listener
+            href: cli-ref/load-balancer/add-listener.md
+          - name: add-location
+            href: cli-ref/load-balancer/add-location.md
+          - name: add-sni
+            href: cli-ref/load-balancer/add-sni.md
+          - name: add-stream-listener
+            href: cli-ref/load-balancer/add-stream-listener.md
+          - name: add-stream-sni
+            href: cli-ref/load-balancer/add-stream-sni.md
+          - name: autoscale
+            href: cli-ref/load-balancer/autoscale.md
+          - name: create
+            href: cli-ref/load-balancer/create.md
+          - name: delete
+            href: cli-ref/load-balancer/delete.md
+          - name: disable-traffic
+            href: cli-ref/load-balancer/disable-traffic.md
+          - name: enable-traffic
+            href: cli-ref/load-balancer/enable-traffic.md
+          - name: get
+            href: cli-ref/load-balancer/get.md
+          - name: list
+            href: cli-ref/load-balancer/list.md
+          - name: list-operations
+            href: cli-ref/load-balancer/list-operations.md
+          - name: logging
+            href: cli-ref/load-balancer/logging.md
+          - name: remove-listener
+            href: cli-ref/load-balancer/remove-listener.md
+          - name: remove-location
+            href: cli-ref/load-balancer/remove-location.md
+          - name: remove-sni
+            href: cli-ref/load-balancer/remove-sni.md
+          - name: start
+            href: cli-ref/load-balancer/start.md
+          - name: stop
+            href: cli-ref/load-balancer/stop.md
+          - name: target-states
+            href: cli-ref/load-balancer/target-states.md
+          - name: update
+            href: cli-ref/load-balancer/update.md
+          - name: update-listener
+            href: cli-ref/load-balancer/update-listener.md
+          - name: update-sni
+            href: cli-ref/load-balancer/update-sni.md
+          - name: update-stream-listener
+            href: cli-ref/load-balancer/update-stream-listener.md
+          - name: update-stream-sni
+            href: cli-ref/load-balancer/update-stream-sni.md
+      - name: target-group
+        items:
+          - name: Overview
+            href: cli-ref/target-group/index.md
+          - name: add-targets
+            href: cli-ref/target-group/add-targets.md
+          - name: create
+            href: cli-ref/target-group/create.md
+          - name: delete
+            href: cli-ref/target-group/delete.md
+          - name: get
+            href: cli-ref/target-group/get.md
+          - name: list
+            href: cli-ref/target-group/list.md
+          - name: remove-targets
+            href: cli-ref/target-group/remove-targets.md
+          - name: update
+            href: cli-ref/target-group/update.md
+      - name: virtual-host
+        items:
+          - name: Overview
+            href: cli-ref/virtual-host/index.md
+          - name: append-grpc-route
+            href: cli-ref/virtual-host/append-grpc-route.md
+          - name: append-http-route
+            href: cli-ref/virtual-host/append-http-route.md
+          - name: create
+            href: cli-ref/virtual-host/create.md
+          - name: delete
+            href: cli-ref/virtual-host/delete.md
+          - name: get
+            href: cli-ref/virtual-host/get.md
+          - name: insert-grpc-route
+            href: cli-ref/virtual-host/insert-grpc-route.md
+          - name: insert-http-route
+            href: cli-ref/virtual-host/insert-http-route.md
+          - name: list
+            href: cli-ref/virtual-host/list.md
+          - name: prepend-grpc-route
+            href: cli-ref/virtual-host/prepend-grpc-route.md
+          - name: prepend-http-route
+            href: cli-ref/virtual-host/prepend-http-route.md
+          - name: remove-grpc-route
+            href: cli-ref/virtual-host/remove-grpc-route.md
+          - name: remove-http-route
+            href: cli-ref/virtual-host/remove-http-route.md
+          - name: update
+            href: cli-ref/virtual-host/update.md
+          - name: update-grpc-route
+            href: cli-ref/virtual-host/update-grpc-route.md
+          - name: update-http-route
+            href: cli-ref/virtual-host/update-http-route.md
+  - name: '{{ TF }} reference'
+    href: tf-ref.md
+  - name: API reference
+    items:
+      - name: Authentication with the API
+        href: api-ref/authentication.md
+      - name: gRPC
+        items:
+          - name: Overview
+            href: api-ref/grpc/index.md
+          - name: BackendGroup
+            items:
+              - name: Overview
+                href: api-ref/grpc/BackendGroup/index.md
+              - name: Get
+                href: api-ref/grpc/BackendGroup/get.md
+              - name: List
+                href: api-ref/grpc/BackendGroup/list.md
+              - name: Create
+                href: api-ref/grpc/BackendGroup/create.md
+              - name: Update
+                href: api-ref/grpc/BackendGroup/update.md
+              - name: Delete
+                href: api-ref/grpc/BackendGroup/delete.md
+              - name: AddBackend
+                href: api-ref/grpc/BackendGroup/addBackend.md
+              - name: RemoveBackend
+                href: api-ref/grpc/BackendGroup/removeBackend.md
+              - name: UpdateBackend
+                href: api-ref/grpc/BackendGroup/updateBackend.md
+              - name: ListOperations
+                href: api-ref/grpc/BackendGroup/listOperations.md
+          - name: HttpRouter
+            items:
+              - name: Overview
+                href: api-ref/grpc/HttpRouter/index.md
+              - name: Get
+                href: api-ref/grpc/HttpRouter/get.md
+              - name: List
+                href: api-ref/grpc/HttpRouter/list.md
+              - name: Create
+                href: api-ref/grpc/HttpRouter/create.md
+              - name: Update
+                href: api-ref/grpc/HttpRouter/update.md
+              - name: Delete
+                href: api-ref/grpc/HttpRouter/delete.md
+              - name: ListOperations
+                href: api-ref/grpc/HttpRouter/listOperations.md
+          - name: LoadBalancer
+            items:
+              - name: Overview
+                href: api-ref/grpc/LoadBalancer/index.md
+              - name: Get
+                href: api-ref/grpc/LoadBalancer/get.md
+              - name: List
+                href: api-ref/grpc/LoadBalancer/list.md
+              - name: Create
+                href: api-ref/grpc/LoadBalancer/create.md
+              - name: Update
+                href: api-ref/grpc/LoadBalancer/update.md
+              - name: Delete
+                href: api-ref/grpc/LoadBalancer/delete.md
+              - name: Start
+                href: api-ref/grpc/LoadBalancer/start.md
+              - name: Stop
+                href: api-ref/grpc/LoadBalancer/stop.md
+              - name: AddListener
+                href: api-ref/grpc/LoadBalancer/addListener.md
+              - name: RemoveListener
+                href: api-ref/grpc/LoadBalancer/removeListener.md
+              - name: UpdateListener
+                href: api-ref/grpc/LoadBalancer/updateListener.md
+              - name: AddSniMatch
+                href: api-ref/grpc/LoadBalancer/addSniMatch.md
+              - name: UpdateSniMatch
+                href: api-ref/grpc/LoadBalancer/updateSniMatch.md
+              - name: RemoveSniMatch
+                href: api-ref/grpc/LoadBalancer/removeSniMatch.md
+              - name: GetTargetStates
+                href: api-ref/grpc/LoadBalancer/getTargetStates.md
+              - name: ListOperations
+                href: api-ref/grpc/LoadBalancer/listOperations.md
+          - name: Operation
+            items:
+              - name: Overview
+                href: api-ref/grpc/Operation/index.md
+              - name: Get
+                href: api-ref/grpc/Operation/get.md
+              - name: Cancel
+                href: api-ref/grpc/Operation/cancel.md
+          - name: TargetGroup
+            items:
+              - name: Overview
+                href: api-ref/grpc/TargetGroup/index.md
+              - name: Get
+                href: api-ref/grpc/TargetGroup/get.md
+              - name: List
+                href: api-ref/grpc/TargetGroup/list.md
+              - name: Create
+                href: api-ref/grpc/TargetGroup/create.md
+              - name: Update
+                href: api-ref/grpc/TargetGroup/update.md
+              - name: Delete
+                href: api-ref/grpc/TargetGroup/delete.md
+              - name: AddTargets
+                href: api-ref/grpc/TargetGroup/addTargets.md
+              - name: RemoveTargets
+                href: api-ref/grpc/TargetGroup/removeTargets.md
+              - name: ListOperations
+                href: api-ref/grpc/TargetGroup/listOperations.md
+          - name: VirtualHost
+            items:
+              - name: Overview
+                href: api-ref/grpc/VirtualHost/index.md
+              - name: Get
+                href: api-ref/grpc/VirtualHost/get.md
+              - name: List
+                href: api-ref/grpc/VirtualHost/list.md
+              - name: Create
+                href: api-ref/grpc/VirtualHost/create.md
+              - name: Update
+                href: api-ref/grpc/VirtualHost/update.md
+              - name: Delete
+                href: api-ref/grpc/VirtualHost/delete.md
+              - name: RemoveRoute
+                href: api-ref/grpc/VirtualHost/removeRoute.md
+              - name: UpdateRoute
+                href: api-ref/grpc/VirtualHost/updateRoute.md
+      - name: REST
+        items:
+          - name: Overview
+            href: api-ref/index.md
+          - name: BackendGroup
+            items:
+              - name: Overview
+                href: api-ref/BackendGroup/index.md
+              - name: Get
+                href: api-ref/BackendGroup/get.md
+              - name: List
+                href: api-ref/BackendGroup/list.md
+              - name: Create
+                href: api-ref/BackendGroup/create.md
+              - name: Update
+                href: api-ref/BackendGroup/update.md
+              - name: Delete
+                href: api-ref/BackendGroup/delete.md
+              - name: AddBackend
+                href: api-ref/BackendGroup/addBackend.md
+              - name: RemoveBackend
+                href: api-ref/BackendGroup/removeBackend.md
+              - name: UpdateBackend
+                href: api-ref/BackendGroup/updateBackend.md
+              - name: ListOperations
+                href: api-ref/BackendGroup/listOperations.md
+          - name: HttpRouter
+            items:
+              - name: Overview
+                href: api-ref/HttpRouter/index.md
+              - name: Get
+                href: api-ref/HttpRouter/get.md
+              - name: List
+                href: api-ref/HttpRouter/list.md
+              - name: Create
+                href: api-ref/HttpRouter/create.md
+              - name: Update
+                href: api-ref/HttpRouter/update.md
+              - name: Delete
+                href: api-ref/HttpRouter/delete.md
+              - name: ListOperations
+                href: api-ref/HttpRouter/listOperations.md
+          - name: LoadBalancer
+            items:
+              - name: Overview
+                href: api-ref/LoadBalancer/index.md
+              - name: Get
+                href: api-ref/LoadBalancer/get.md
+              - name: List
+                href: api-ref/LoadBalancer/list.md
+              - name: Create
+                href: api-ref/LoadBalancer/create.md
+              - name: Update
+                href: api-ref/LoadBalancer/update.md
+              - name: Delete
+                href: api-ref/LoadBalancer/delete.md
+              - name: Start
+                href: api-ref/LoadBalancer/start.md
+              - name: Stop
+                href: api-ref/LoadBalancer/stop.md
+              - name: AddListener
+                href: api-ref/LoadBalancer/addListener.md
+              - name: RemoveListener
+                href: api-ref/LoadBalancer/removeListener.md
+              - name: UpdateListener
+                href: api-ref/LoadBalancer/updateListener.md
+              - name: AddSniMatch
+                href: api-ref/LoadBalancer/addSniMatch.md
+              - name: UpdateSniMatch
+                href: api-ref/LoadBalancer/updateSniMatch.md
+              - name: RemoveSniMatch
+                href: api-ref/LoadBalancer/removeSniMatch.md
+              - name: GetTargetStates
+                href: api-ref/LoadBalancer/getTargetStates.md
+              - name: ListOperations
+                href: api-ref/LoadBalancer/listOperations.md
+          - name: Operation
+            items:
+              - name: Overview
+                href: api-ref/Operation/index.md
+              - name: Get
+                href: api-ref/Operation/get.md
+              - name: Cancel
+                href: api-ref/Operation/cancel.md
+          - name: TargetGroup
+            items:
+              - name: Overview
+                href: api-ref/TargetGroup/index.md
+              - name: Get
+                href: api-ref/TargetGroup/get.md
+              - name: List
+                href: api-ref/TargetGroup/list.md
+              - name: Create
+                href: api-ref/TargetGroup/create.md
+              - name: Update
+                href: api-ref/TargetGroup/update.md
+              - name: Delete
+                href: api-ref/TargetGroup/delete.md
+              - name: AddTargets
+                href: api-ref/TargetGroup/addTargets.md
+              - name: RemoveTargets
+                href: api-ref/TargetGroup/removeTargets.md
+              - name: ListOperations
+                href: api-ref/TargetGroup/listOperations.md
+          - name: VirtualHost
+            items:
+              - name: Overview
+                href: api-ref/VirtualHost/index.md
+              - name: Get
+                href: api-ref/VirtualHost/get.md
+              - name: List
+                href: api-ref/VirtualHost/list.md
+              - name: Create
+                href: api-ref/VirtualHost/create.md
+              - name: Update
+                href: api-ref/VirtualHost/update.md
+              - name: Delete
+                href: api-ref/VirtualHost/delete.md
+              - name: RemoveRoute
+                href: api-ref/VirtualHost/removeRoute.md
+              - name: UpdateRoute
+                href: api-ref/VirtualHost/updateRoute.md
+  - name: '{{ monitoring-name }} metrics'
+    href: metrics.md
+  - name: '{{ at-name }} events'
+    href: at-ref.md
+  - name: L7 load balancer logs
+    href: logs-ref.md
+  - name: Release notes
+    href: release-notes.md
