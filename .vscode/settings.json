@@ -1,0 +1,17 @@
+{
+    "workbench.colorCustomizations": {
+        "[mono white]": {
+            "activityBar.foreground": "#06d6a0",
+            "activityBarBadge.background": "#06d6a0",
+            "list.activeSelectionBackground": "#06d6a0",
+            "statusBarItem.remoteForeground": "#06d6a0",
+            "button.background": "#06d6a0",
+            "editorGutter.addedBackground": "#06d6a0",
+            "scrollbarSlider.background": "#06d6a0f5",
+            "scrollbarSlider.hoverBackground": "#06d6a0fb",
+            "scrollbarSlider.activeBackground": "#06d6a0",
+            "notificationsInfoIcon.foreground": "#06d6a0",
+            "minimapGutter.addedBackground": "#06d6a0"
+        }
+    }
+}

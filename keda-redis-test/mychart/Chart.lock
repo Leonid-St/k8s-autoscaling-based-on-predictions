@@ -1,0 +1,15 @@
+dependencies:
+- name: prometheus
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 25.1.0
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 18.4.0
+- name: keda
+  repository: https://kedacore.github.io/charts
+  version: 2.14.0
+- name: kubernetes-dashboard
+  repository: https://kubernetes.github.io/dashboard/
+  version: 6.0.0
+digest: sha256:eaefb9c50f38715a9ef7c014afa59997a298588c4b94da9990214f299c11c3ea
+generated: "2025-02-04T19:55:12.052287+03:00"

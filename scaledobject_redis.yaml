@@ -1,0 +1,19 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: simple-app-redis-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: simple-app
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  pollingInterval: 5
+  triggers:
+  - type: redis
+    metadata:
+      address: redis-master.default.svc.cluster.local:6379
+      listName: my_redis_events
+      listLength: "5"
+      passwordFromEnv: REDIS_PASSWORD

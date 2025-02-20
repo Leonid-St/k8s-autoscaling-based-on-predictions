@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-app
+spec:
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+      - name: nginx
+        image: {{ .Values.nginx.image }}
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        resources: {{ .Values.nginx.resources | toYaml | nindent 12 }}
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: {{ .Values.nginx.configMap.name }}
+        env:
+        - name: REDIS_PASSWORD
+        valueFrom:
+            secretKeyRef:
+            name: redis-secret
+            key: password

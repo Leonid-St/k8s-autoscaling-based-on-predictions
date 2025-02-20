@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.nginx.configMap.name }}
+  labels:
+    {{- include "mychart.labels" . | nindent 4 }}
+  annotations:
+    "meta.helm.sh/release-name": {{ .Release.Name | quote }}
+    "meta.helm.sh/release-namespace": {{ .Release.Namespace | quote }}
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    http {
+        server {
+            listen 80;
+            location /stub_status {
+                stub_status on;
+                allow all;
+            }
+            location / {
+                return 200 'Hello, World!';
+                add_header Content-Type text/plain;
+            }
+        }
+    } 

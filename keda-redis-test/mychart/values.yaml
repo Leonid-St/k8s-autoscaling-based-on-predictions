@@ -1,0 +1,116 @@
+nginx:
+  image: nginx:latest
+  configMap:
+    name: nginx-config
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "250m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+  serviceName: nginx-app
+  servicePort: 80
+
+prometheus:
+  server:
+    service:
+      type: LoadBalancer
+  alertmanager:
+    enabled: true
+
+redis:
+  auth:
+    password: "your-redis-password" 
+
+keda:
+  operator:
+    name: keda-operator-my-release  # Уникальное имя оператора
+  enabled: true
+  installCRDs: true
+  scaledObjects:
+    - name: redis-scaler
+      scaleTargetRef:
+        kind: Deployment
+        name: nginx-app
+      minReplicaCount: 1
+      maxReplicaCount: 5
+      pollingInterval: 5
+      triggers:
+        - type: redis
+          metadata:
+            address: redis-master.default.svc.cluster.local:6379
+            listName: my_redis_events
+            listLength: "5"
+            passwordFromEnv: REDIS_PASSWORD
+            
+
+    - name: prometheus-scaler
+      scaleTargetRef:
+        kind: Deployment
+        name: nginx-app
+      minReplicaCount: 1
+      maxReplicaCount: 5
+      triggers:
+        - type: prometheus
+          metadata:
+            serverAddress: http://prometheus-server.default.svc.cluster.local:9090
+            metricName: nginx_http_requests_total
+            query: sum(rate(nginx_http_requests_total[2m]))
+            threshold: "5"
+
+nginxExporter:
+  enabled: true
+  image: nginx/nginx-prometheus-exporter:latest
+
+kubernetes-dashboard:
+  enabled: true
+  settings:
+    clusterName: "keda-test-cluster"
+  serviceAccount:
+    create: true
+    name: dashboard-admin
+  rbac:
+    clusterAdminRole: true
+  ingress:
+    enabled: true
+    hosts: [dashboard.k8s.local]
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+
+service:
+  type: ClusterIP
+  port: 80
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automount: true
+
+redisPassword: "1"
+
+ingress:
+  enabled: false
+  className: ""
+  hosts:
+    - host: ""
+      paths: []
+  tls: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: latest
+  pullPolicy: IfNotPresent
+
+podAnnotations: {}
+podLabels: {}

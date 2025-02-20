@@ -1,0 +1,56 @@
+frontend:
+  listenAddress: ""
+  tlsListenAddress: ""
+  tlsListenPort: ""
+  connectionsLimit: "0"
+origins:
+  - name: default
+    originType: prometheus
+    originURL: http://my-prom-prometheus-server:80
+profiler:
+  enabled: false
+  port: 6060
+prometheusScrape: false
+prometheus:
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    labels: {}
+replicaCount: 1
+image:
+  repository: tricksterproxy/trickster
+  tag: "1.1"
+  pullPolicy: IfNotPresent
+service:
+  annotations: {}
+  labels: {}
+  clusterIP: ""
+  externalIPs: []
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  metricsPort: 8481
+  servicePort: 8480
+  type: ClusterIP
+ingress:
+  enabled: false
+  annotations: {}
+  extraLabels: {}
+  hosts: []
+  tls: []
+volumes:
+  persistent:
+    type: "persistentVolume"
+    enabled: false
+    mountPath: "/tmp/trickster"
+    accessModes:
+      - ReadWriteOnce
+    annotations: {}
+    existingClaim: ""
+    size: 15Gi
+  generic:
+    type: "generic"
+    enabled: true
+    mountPath: "/tmp/trickster"
+podAnnotations: {}
+resources: {}
+securityContext: {}

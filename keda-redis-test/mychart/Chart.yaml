@@ -1,0 +1,22 @@
+apiVersion: v2
+name: autoscaling-test
+description: KEDA Redis/Prometheus Autoscaling Test Cluster
+version: 0.1.0
+dependencies:
+  - name: prometheus
+    version: 25.1.0
+    repository: https://prometheus-community.github.io/helm-charts
+  - name: redis
+    version: 18.4.0 
+    repository: https://charts.bitnami.com/bitnami
+  - name: keda
+    version: 2.14.0
+    repository: https://kedacore.github.io/charts
+    condition: keda.enabled
+    import-values:
+      - child: rbac
+        parent: rbac
+    alias: keda-subchart  # Добавляем алиас
+  - name: kubernetes-dashboard
+    version: 6.0.0
+    repository: https://kubernetes.github.io/dashboard/
