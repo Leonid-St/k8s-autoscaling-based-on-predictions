@@ -86,8 +86,8 @@ curl -X POST http://localhost:5001/fit-model -F 'file=@/path/to/data.csv'
 
 An example `curl` command to get predictions:
 ```bash
-curl -X GET "http://localhost:5001/predict?type=resource&timestamp=2023-03-15T14:30:00"
-curl -X GET "http://localhost:5001/predict?type=requests&timestamp=2023-03-15T14:30:00"
+curl -X GET "http://localhost:5001/predict?type=resource&timestamp=25-03-05-11-51T14:30:00"
+curl -X GET "http://localhost:5001/predict?type=requests&timestamp=25-03-05-11-51T14:30:00"
 ```
 
 3. Get Forecasts:
@@ -98,7 +98,7 @@ Example `curl` command to get forecasts from a csv file:
 ```bash
  curl -X POST http://127.0.0.1:5001/forecast \
 -H "Content-Type: multipart/form-data" \
--F "file=@./data/requests-23-11-16-22-51.csv"
+-F "file=@./data/requests-25-03-05-11-51.csv"
 ```
 
 Example `curl` command to get forecasts from a json object:
