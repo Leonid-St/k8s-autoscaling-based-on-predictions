@@ -5,6 +5,33 @@ The data synthesizer, forecaster and predictor model server used together with K
 ### Set up python virtual environment
 
 ```bash
+export LDFLAGS="-L$(brew --prefix openssl)/lib -L$(brew --prefix readline)/lib -L$(brew --prefix zlib)/lib"
+export CPPFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix readline)/include -I$(brew --prefix zlib)/include"
+export PKG_CONFIG_PATH="$(brew --prefix openssl)/lib/pkgconfig:$(brew --prefix readline)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig"
+```
+
+```bash
+brew update
+brew upgrade
+brew install openssl readline sqlite3 xz zlib tcl-tk
+pyenv install 3.9.7
+pyenv local 3.9.7
+ ```
+
+```bash
+# Для bash
+echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bash_profile
+echo 'eval "$(pyenv init --path)"' >> ~/.bash_profile
+echo 'eval "$(pyenv init -)"' >> ~/.bash_profile
+
+# Для zsh
+echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.zshrc
+echo 'eval "$(pyenv init --path)"' >> ~/.zshrc
+echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+```
+
+
+```bash
 deactivate
 rm -rf autoscaler_predictor_model/venv
 ```
@@ -40,6 +67,10 @@ The json file name is in the format: `<type>-<year>-<month>-<day>-<hour>-<minute
 ## How to use the model server
 ### Build and Run the Docker image
 ```bash
+podman machine init
+export DOCKER_HOST='unix:///var/folders/2v/7rm59ty53ld26_byy1x3z1g80000gn/T/podman/podman-machine-default-api.sock'
+
+podman machine start
 podman build -t autoscaler-prediction-model-server .
 podman run -p 5001:5001 autoscaler-prediction-model-server
 ```
