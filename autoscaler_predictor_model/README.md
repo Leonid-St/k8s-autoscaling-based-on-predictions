@@ -42,12 +42,6 @@ source autoscaler_predictor_model/venv/bin/activate
 pip install -r requirements.txt
 ```
 
-```bash
-python3 -m venv autoscaler_predictor_model/venv
-source autoscaler_predictor_model/venv/bin/activate
-pip install -r requirements.txt
-```
-
 ### Usage Instructions:
 1. Configure the data synthesizer:
 - Edit the `config.ini` file to set the peak and valley CPU/memory usage or requests/s load. You can also configure
