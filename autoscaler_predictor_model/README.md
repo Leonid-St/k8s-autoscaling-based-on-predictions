@@ -101,10 +101,67 @@ curl -X POST http://127.0.0.1:5001/forecast \
 - The fit-model endpoint expects a CSV file with two columns: timestamp and requests or three columes: timestamp, cpu and memory. Sample data can be found in the `data` folder.
 - The predict endpoint requires a timestamp in a recognizable datetime format.
 - The model fitting is simplistic and assumes a polynomial model. You may need to adjust the model fitting part based on your specific requirements.
-format /metrics/<model_type> for KEDA:
+
+### Autoscaling Endpoints:
+- `/metrics/<model_type>` - комбинированная метрика (макс. из CPU/RAM)
+- `/metrics/<model_type>/cpu` - метрика только по CPU
+- `/metrics/<model_type>/memory` - метрика только по RAM
+
+Пример ответа:
+
 ```json
 {
   "value": 72.34,
   "timestamp": "2024-03-15T14:30:00"
 }
+```
+
+
+
+
+
+Пример для KEDA:
+```yaml
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: cpu-scaler
+spec:
+  scaleTargetRef:
+    name: your-deployment
+  triggers:
+    - type: external-push
+      metadata:
+        scalerAddress: "autoscaler-service:5001"
+        url: "http://autoscaler-service:5001/metrics/xgboost/cpu"
+        threshold: "70"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: memory-scaler
+spec:
+  scaleTargetRef:
+    name: your-deployment
+  triggers:
+    - type: external-push
+      metadata:
+        scalerAddress: "autoscaler-service:5001"
+        url: "http://autoscaler-service:5001/metrics/xgboost/memory"
+        threshold: "75"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: combined-scaler
+spec:
+  scaleTargetRef:
+    name: your-deployment
+  triggers:
+    - type: external-push
+      metadata:
+        scalerAddress: "autoscaler-service:5001"
+        url: "http://autoscaler-service:5001/metrics/xgboost"
+        threshold: "80"
+
 ```

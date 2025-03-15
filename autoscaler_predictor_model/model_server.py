@@ -135,9 +135,6 @@ def predict(model_type):
 #     prediction['timestamp'] = next_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 #     return jsonify(prediction)
 
-
-
-
 @app.route('/metrics/<model_type>')
 def metrics(model_type):
     try:
@@ -159,6 +156,38 @@ def metrics(model_type):
             'timestamp': pd.Timestamp.now().isoformat()
         })
         
+    except KeyError:
+        return jsonify({'error': 'Invalid model type'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/metrics/<model_type>/cpu')
+def metrics_cpu(model_type):
+    try:
+        prediction = models[model_type].predict(pd.Timestamp.now())
+        max_cpu = float(config.get('DEFAULT', 'MaxCpu'))
+        cpu_metric = prediction['cpu'] / max_cpu * 100
+        
+        return jsonify({
+            'value': round(cpu_metric, 2),
+            'timestamp': pd.Timestamp.now().isoformat()
+        })
+    except KeyError:
+        return jsonify({'error': 'Invalid model type'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/metrics/<model_type>/memory')
+def metrics_memory(model_type):
+    try:
+        prediction = models[model_type].predict(pd.Timestamp.now())
+        max_mem = float(config.get('DEFAULT', 'MaxMem'))
+        mem_metric = prediction['memory'] / max_mem * 100
+        
+        return jsonify({
+            'value': round(mem_metric, 2),
+            'timestamp': pd.Timestamp.now().isoformat()
+        })
     except KeyError:
         return jsonify({'error': 'Invalid model type'}), 400
     except Exception as e:
