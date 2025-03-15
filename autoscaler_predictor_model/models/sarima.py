@@ -7,15 +7,22 @@ class SARIMAModel:
         self.data_retention = pd.to_timedelta(data_retention)
     
     def update_data(self, new_data):
-        self.historical_data = pd.concat([self.historical_data, new_data])
-        self.historical_data = self.historical_data.last(self.data_retention)
+        combined = pd.concat([self.historical_data, new_data])
+        combined = combined.sort_index().last(self.data_retention)
+        self.historical_data = combined.drop_duplicates()
     
     def forecast(self):
+        if self.historical_data.empty:
+            raise ValueError("No historical data available")
+            
         if len(self.historical_data) < 10:
-            return None
+            raise ValueError("Minimum 10 data points required for SARIMA")
         
-        cpu_pred = self._forecast_metric('cpu')
-        mem_pred = self._forecast_metric('memory')
+        try:
+            cpu_pred = self._forecast_metric('cpu')
+            mem_pred = self._forecast_metric('memory')
+        except Exception as e:
+            raise RuntimeError(f"SARIMA forecasting failed: {str(e)}")
         return {
             'cpu': cpu_pred,
             'memory': mem_pred

@@ -1,11 +1,18 @@
 import pandas as pd
 from io import StringIO
 from flask import abort
-
+from exceptions import DataValidationError
 def process_uploaded_file(request):
-    file = request.files.get('file')
-    if not file:
-        abort(400, 'No file provided')
+    try:
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            raise DataValidationError("No file uploaded")
+            
+        if file.content_length > 1024 * 1024:  # Ограничение 1MB
+            raise DataValidationError("File size exceeds 1MB limit")
+            
+    except Exception as e:
+        raise DataValidationError(str(e))
     
     file_type = file.filename.split('.')[-1].lower()
     
@@ -15,7 +22,7 @@ def process_uploaded_file(request):
         elif file_type == 'json':
             df = pd.read_json(StringIO(file.read().decode('utf-8')))
             if 'timestamp' in df.columns:
-                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                df['timestamp'] = pd.to_datetime(df['timestamp'], infer_datetime_format=True)
         else:
             abort(400, 'Unsupported file type')
     except Exception as e:

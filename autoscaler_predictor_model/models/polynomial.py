@@ -29,6 +29,17 @@ class PolynomialModel:
 
     def predict(self, features, predict_type):
         if predict_type == 'resource':
+            if not any([self.cpu_model, self.memory_model, self.requests_model]):
+                raise NotFittedError("Model not fitted yet")
+            
+            try:
+                if predict_type == 'resource':
+                    return {
+                        'cpu': self.cpu_model.predict(features)[0],
+                        'memory': self.memory_model.predict(features)[0]
+                    }
+            except Exception as e:
+                raise PredictionError(f"Prediction failed: {str(e)}")
             return {
                 'cpu': self.cpu_model.predict(features)[0],
                 'memory': self.memory_model.predict(features)[0]

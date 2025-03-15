@@ -4,19 +4,17 @@ from io import StringIO
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
+from sklearn.exceptions import NotFittedError
 from datetime import timedelta
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import configparser
-from xgboost import XGBRegressor
-import joblib
+
 from utils.file_processor import process_uploaded_file
 from models.polynomial import PolynomialModel
 from models.xgboost import XGBoostModel
 from models.sarima import SARIMAModel
 
-# Глобальные переменные для моделей
-cpu_xgb_model = XGBRegressor()
-memory_xgb_model = XGBRegressor()
+
 MODEL_PATH = '/app/models/'
 
 app = Flask(__name__)
@@ -40,13 +38,34 @@ models = {
     'sarima': SARIMAModel(data_retention='4H')
 }
 
+def handle_exceptions(f):
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        except NotFittedError as e:
+            return jsonify({'error': f'Model not trained: {str(e)}'}), 412
+        except Exception as e:
+            return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+    wrapper.__name__ = f.__name__
+    return wrapper
+
+def add_time_features(df):
+    df = df.copy()
+    df['minutes_since_midnight'] = df['timestamp'].dt.hour * 60 + df['timestamp'].dt.minute
+    return df
+
+@handle_exceptions
 @app.route('/fit/<model_type>', methods=['POST'])
 def fit_model(model_type):
     try:
         df = process_uploaded_file(request)
         
         if model_type == 'polynomial':
-            models[model_type].fit(df, df[['minutes_since_midnight']])
+            if 'minutes_since_midnight' not in df.columns:
+                df = add_time_features(df)
+            models[model_type].fit(df[['minutes_since_midnight']], df[['minutes_since_midnight']])
         elif model_type == 'xgboost':
             models[model_type].partial_fit(df)
         elif model_type == 'sarima':
@@ -60,6 +79,7 @@ def fit_model(model_type):
         return jsonify({'error': str(e)}), 400
 
 @app.route('/predict/<model_type>', methods=['GET'])
+@handle_exceptions
 def predict(model_type):
     try:
         timestamp_str = request.args.get('timestamp')
@@ -75,6 +95,8 @@ def predict(model_type):
             result = models[model_type].predict(timestamp)
         elif model_type == 'sarima':
             result = models[model_type].forecast()
+            if result is None:
+                return jsonify({'error': 'Not enough historical data for SARIMA'}), 400
         else:
             return jsonify({'error': 'Invalid model type'}), 400
 

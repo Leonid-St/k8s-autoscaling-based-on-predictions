@@ -1,5 +1,7 @@
 from xgboost import XGBRegressor
 import pandas as pd
+from sklearn.exceptions import NotFittedError
+from sklearn.base import BaseEstimator
 
 class XGBoostModel:
     def __init__(self):
@@ -7,19 +9,23 @@ class XGBoostModel:
         self.memory_model = XGBRegressor()
     
     def partial_fit(self, df):
+        if df.empty:
+            raise ValueError("Empty training data")
+        
         features = self._create_features(df)
         
         if 'cpu' in df.columns:
-            if not self.cpu_model.get_params():
+            if self.cpu_model.get_params()['n_estimators'] == 100:  # Дефолтные параметры = необученная модель
                 self.cpu_model.fit(features, df['cpu'])
             else:
                 self.cpu_model.partial_fit(features, df['cpu'])
+
         
-        if 'memory' in df.columns:
-            if not self.memory_model.get_params():
-                self.memory_model.fit(features, df['memory'])
-            else:
-                self.memory_model.partial_fit(features, df['memory'])
+            if 'memory' in df.columns:
+                if not self.memory_model.get_params():
+                    self.memory_model.fit(features, df['memory'])
+                else:
+                    self.memory_model.partial_fit(features, df['memory'])
     
     def predict(self, timestamp):
         features = self._create_features(pd.DataFrame({'timestamp': [timestamp]}))
