@@ -87,53 +87,53 @@ def predict(model_type):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# @app.route('/forecast', methods=['POST'])
-# def forecast():
-#     # Check if the request contains JSON data
-#     if request.is_json:
-#         data = request.get_json()
-#         df = pd.DataFrame(data)
-#         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-#     else:
-#         # Read CSV file from the request
-#         file = request.files.get('file')
-#         if not file:
-#             return jsonify({'error': 'No file provided'}), 400
-#         # Convert file to DataFrame
-#         df = pd.read_csv(StringIO(file.read().decode('utf-8')))
+@app.route('/forecast', methods=['POST'])
+def forecast():
+    # Check if the request contains JSON data
+    if request.is_json:
+        data = request.get_json()
+        df = pd.DataFrame(data)
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+    else:
+        # Read CSV file from the request
+        file = request.files.get('file')
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
+        # Convert file to DataFrame
+        df = pd.read_csv(StringIO(file.read().decode('utf-8')))
 
-#     # Validate DataFrame format and presence of timestamp
-#     if 'timestamp' not in df.columns:
-#         return jsonify({'error': 'CSV/JSON must contain timestamp column'}), 400
+    # Validate DataFrame format and presence of timestamp
+    if 'timestamp' not in df.columns:
+        return jsonify({'error': 'CSV/JSON must contain timestamp column'}), 400
 
-#     # Convert timestamps to DateTime and sort
-#     df['timestamp'] = pd.to_datetime(df['timestamp'])
-#     df.set_index('timestamp', inplace=True)
-#     df.sort_index(inplace=True)
+    # Convert timestamps to DateTime and sort
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df.set_index('timestamp', inplace=True)
+    df.sort_index(inplace=True)
 
-#     # Predict for the next 15 minutes
-#     last_timestamp = df.index[-1]
-#     next_timestamp = last_timestamp + timedelta(minutes=15)
+    # Predict for the next 15 minutes
+    last_timestamp = df.index[-1]
+    next_timestamp = last_timestamp + timedelta(minutes=15)
 
-#     prediction = {}
+    prediction = {}
 
-#     # SARIMA models for each type of data
-#     if 'cpu' in df.columns and 'memory' in df.columns:
-#         cpu_model = SARIMAX(df['cpu'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-#         cpu_results = cpu_model.fit()
-#         prediction['cpu'] = cpu_results.forecast(steps=1)[0]
+    # SARIMA models for each type of data
+    if 'cpu' in df.columns and 'memory' in df.columns:
+        cpu_model = SARIMAX(df['cpu'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+        cpu_results = cpu_model.fit()
+        prediction['cpu'] = cpu_results.forecast(steps=1)[0]
 
-#         memory_model = SARIMAX(df['memory'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-#         memory_results = memory_model.fit()
-#         prediction['memory'] = memory_results.forecast(steps=1)[0]
+        memory_model = SARIMAX(df['memory'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+        memory_results = memory_model.fit()
+        prediction['memory'] = memory_results.forecast(steps=1)[0]
 
-#     if 'requests' in df.columns:
-#         requests_model = SARIMAX(df['requests'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-#         requests_results = requests_model.fit()
-#         prediction['requests'] = requests_results.forecast(steps=1)[0]
+    if 'requests' in df.columns:
+        requests_model = SARIMAX(df['requests'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+        requests_results = requests_model.fit()
+        prediction['requests'] = requests_results.forecast(steps=1)[0]
 
-#     prediction['timestamp'] = next_timestamp.strftime('%Y-%m-%d %H:%M:%S')
-#     return jsonify(prediction)
+    prediction['timestamp'] = next_timestamp.strftime('%Y-%m-%d %H:%M:%S')
+    return jsonify(prediction)
 
 @app.route('/metrics/<model_type>')
 def metrics(model_type):
