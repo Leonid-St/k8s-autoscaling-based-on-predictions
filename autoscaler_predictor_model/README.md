@@ -70,25 +70,13 @@ podman run -p 5001:5001 autoscaler-prediction-model-server
 ```
 
 ### Usage Instructions:
-1. Fit the Model:
-- Send a POST request to /fit-model with a CSV/JSON file containing timestamp and cpu/memory or requests columns.
-- The server fits a polynomial model to this data.
-
-An example `curl` command to fit the model:
-```bash
-curl -X POST http://localhost:5001/fit-model -F 'file=@/path/to/data.csv'
-```
+1. Fit Models:
+- POST `/fit/<model_type>` (polynomial/xgboost/sarima)
+- Пример: `curl -X POST http://localhost:5001/fit/xgboost -F 'file=@data.csv'`
 
 2. Get Predictions:
-
-- Send a GET request to /predict with a type parameter (`requests` or `resource`) and a timestamp query parameter.
-- The server returns the predicted cpu/memory or requests value(s) based on the fitted model.
-
-An example `curl` command to get predictions:
-```bash
-curl -X GET "http://localhost:5001/predict?type=resource&timestamp=25-03-05-11-51T14:30:00"
-curl -X GET "http://localhost:5001/predict?type=requests&timestamp=25-03-05-11-51T14:30:00"
-```
+- GET `/predict/<model_type>?timestamp=<ISO timestamp>`
+- Пример: `curl http://localhost:5001/predict/sarima?timestamp=2024-03-15T14:30:00`
 
 3. Get Forecasts:
 
@@ -113,3 +101,10 @@ curl -X POST http://127.0.0.1:5001/forecast \
 - The fit-model endpoint expects a CSV file with two columns: timestamp and requests or three columes: timestamp, cpu and memory. Sample data can be found in the `data` folder.
 - The predict endpoint requires a timestamp in a recognizable datetime format.
 - The model fitting is simplistic and assumes a polynomial model. You may need to adjust the model fitting part based on your specific requirements.
+format /metrics/<model_type> for KEDA:
+```json
+{
+  "value": 72.34,
+  "timestamp": "2024-03-15T14:30:00"
+}
+```

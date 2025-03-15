@@ -6,6 +6,18 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
 from datetime import timedelta
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+import configparser
+from xgboost import XGBRegressor
+import joblib
+from utils.file_processor import process_uploaded_file
+from models.polynomial import PolynomialModel
+from models.xgboost import XGBoostModel
+from models.sarima import SARIMAModel
+
+# Глобальные переменные для моделей
+cpu_xgb_model = XGBRegressor()
+memory_xgb_model = XGBRegressor()
+MODEL_PATH = '/app/models/'
 
 app = Flask(__name__)
 
@@ -14,155 +26,140 @@ cpu_model = None
 memory_model = None
 requests_model = None
 
-@app.route('/fit-model', methods=['POST'])
-def fit_model():
-    global cpu_model, memory_model, requests_model
+# Добавить глобальные переменные
+historical_data = pd.DataFrame()
+DATA_RETENTION = timedelta(hours=4)  # Храним 4 часа данных
 
-    # Read CSV file from the request
-    file = request.files['file']
+config = configparser.ConfigParser()
+config.read('config.ini')
 
-    # Determine file type from filename extension
-    file_type = file.filename.split('.')[-1].lower()
+# Инициализация моделей
+models = {
+    'polynomial': PolynomialModel(),
+    'xgboost': XGBoostModel(),
+    'sarima': SARIMAModel(data_retention='4H')
+}
 
-    # Convert file to DataFrame based on file type
-    if file_type == 'csv':
-        df = pd.read_csv(StringIO(file.read().decode('utf-8')))
-    elif file_type == 'json':
-        df = pd.read_json(StringIO(file.read().decode('utf-8')))
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-    else:
-        return jsonify({'error': 'Unsupported file type'}), 400
-
-    # Validate DataFrame format
-    if 'timestamp' not in df.columns:
-        return jsonify({'error': 'CSV must contain timestamp column'}), 400
-
-    response = {}
-
-    # Convert timestamps to total minutes since midnight
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df['minutes_since_midnight'] = df['timestamp'].dt.hour * 60 + df['timestamp'].dt.minute
-
-    # Prepare model inputs
-    X = df[['minutes_since_midnight']]
-
-    # Check for columns and fit models accordingly
-    if 'cpu' in df.columns and 'memory' in df.columns:
-        # Define 4-degree polynomial regression model
-        cpu_polynomial_regression = make_pipeline(PolynomialFeatures(4), LinearRegression())
-        memory_polynomial_regression = make_pipeline(PolynomialFeatures(4), LinearRegression())
-
-        # Fit model for CPU
-        cpu_model = cpu_polynomial_regression
-        cpu_model.fit(X, df['cpu'])
-        response['cpu_model'] = 'Model fitted for CPU'
-
-        # Fit model for memory
-        memory_model = memory_polynomial_regression
-        memory_model.fit(X, df['memory'])
-        response['memory_model'] = 'Model fitted for memory'
-
-    elif 'requests' in df.columns:
-        polynomial_regression = make_pipeline(PolynomialFeatures(4), LinearRegression())
-
-        # Fit a single model for requests
-        requests_model = polynomial_regression
-        requests_model.fit(X, df['requests'])
-        response['requests_model'] = 'Model fitted for requests'
-
-    else:
-        response['error'] = 'Required columns not found'
-
-    return jsonify(response)
-
-
-@app.route('/predict', methods=['GET'])
-def predict():
-    global cpu_model, memory_model, requests_model
-
-    # Use request.args to get query parameters for GET request
-    predict_type = request.args.get('type')  # 'resources' or 'requests'
-    timestamp = request.args.get('timestamp')
-
-    if not timestamp:
-        return jsonify({'error': 'No timestamp provided'}), 400
-
-    # Convert timestamp to total minutes since midnight
+@app.route('/fit/<model_type>', methods=['POST'])
+def fit_model(model_type):
     try:
-        timestamp = pd.to_datetime(timestamp)
-        minutes_since_midnight = timestamp.hour * 60 + timestamp.minute
-    except ValueError:
-        return jsonify({'error': 'Invalid timestamp format'}), 400
+        df = process_uploaded_file(request)
+        
+        if model_type == 'polynomial':
+            models[model_type].fit(df, df[['minutes_since_midnight']])
+        elif model_type == 'xgboost':
+            models[model_type].partial_fit(df)
+        elif model_type == 'sarima':
+            models[model_type].update_data(df)
+        else:
+            return jsonify({'error': 'Invalid model type'}), 400
+            
+        return jsonify({'status': f'{model_type} model updated'})
+    
+    except KeyError as e:
+        return jsonify({'error': str(e)}), 400
 
-    if predict_type == 'resource':
-        # Check if models are loaded
-        if cpu_model is None or memory_model is None:
-            return jsonify({'error': 'CPU or Memory model is not loaded'}), 500
+@app.route('/predict/<model_type>', methods=['GET'])
+def predict(model_type):
+    try:
+        timestamp_str = request.args.get('timestamp')
+        if not timestamp_str:
+            return jsonify({'error': 'Missing timestamp'}), 400
+            
+        timestamp = pd.to_datetime(timestamp_str)
+        
+        if model_type == 'polynomial':
+            features = [[timestamp.hour * 60 + timestamp.minute]]
+            result = models[model_type].predict(features, 'resource')
+        elif model_type == 'xgboost':
+            result = models[model_type].predict(timestamp)
+        elif model_type == 'sarima':
+            result = models[model_type].forecast()
+        else:
+            return jsonify({'error': 'Invalid model type'}), 400
 
-        # Predict CPU and Memory
-        cpu_prediction = int(cpu_model.predict([[minutes_since_midnight]])[0])
-        memory_prediction = int(memory_model.predict([[minutes_since_midnight]])[0])
-        return jsonify({'cpu': cpu_prediction, 'memory': memory_prediction})
+        return jsonify({
+            'model': model_type,
+            'timestamp': timestamp.isoformat(),
+            **result
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    elif predict_type == 'requests':
-        # Check if model is loaded
-        if requests_model is None:
-            return jsonify({'error': 'Requests model is not loaded'}), 500
+# @app.route('/forecast', methods=['POST'])
+# def forecast():
+#     # Check if the request contains JSON data
+#     if request.is_json:
+#         data = request.get_json()
+#         df = pd.DataFrame(data)
+#         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+#     else:
+#         # Read CSV file from the request
+#         file = request.files.get('file')
+#         if not file:
+#             return jsonify({'error': 'No file provided'}), 400
+#         # Convert file to DataFrame
+#         df = pd.read_csv(StringIO(file.read().decode('utf-8')))
 
-        # Predict Requests
-        requests_prediction = int(requests_model.predict([[minutes_since_midnight]])[0])
-        return jsonify({'requests': requests_prediction})
+#     # Validate DataFrame format and presence of timestamp
+#     if 'timestamp' not in df.columns:
+#         return jsonify({'error': 'CSV/JSON must contain timestamp column'}), 400
 
-    else:
-        return jsonify({'error': 'Invalid prediction type'}), 400
+#     # Convert timestamps to DateTime and sort
+#     df['timestamp'] = pd.to_datetime(df['timestamp'])
+#     df.set_index('timestamp', inplace=True)
+#     df.sort_index(inplace=True)
 
-@app.route('/forecast', methods=['POST'])
-def forecast():
-    # Check if the request contains JSON data
-    if request.is_json:
-        data = request.get_json()
-        df = pd.DataFrame(data)
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-    else:
-        # Read CSV file from the request
-        file = request.files.get('file')
-        if not file:
-            return jsonify({'error': 'No file provided'}), 400
-        # Convert file to DataFrame
-        df = pd.read_csv(StringIO(file.read().decode('utf-8')))
+#     # Predict for the next 15 minutes
+#     last_timestamp = df.index[-1]
+#     next_timestamp = last_timestamp + timedelta(minutes=15)
 
-    # Validate DataFrame format and presence of timestamp
-    if 'timestamp' not in df.columns:
-        return jsonify({'error': 'CSV/JSON must contain timestamp column'}), 400
+#     prediction = {}
 
-    # Convert timestamps to DateTime and sort
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df.set_index('timestamp', inplace=True)
-    df.sort_index(inplace=True)
+#     # SARIMA models for each type of data
+#     if 'cpu' in df.columns and 'memory' in df.columns:
+#         cpu_model = SARIMAX(df['cpu'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+#         cpu_results = cpu_model.fit()
+#         prediction['cpu'] = cpu_results.forecast(steps=1)[0]
 
-    # Predict for the next 15 minutes
-    last_timestamp = df.index[-1]
-    next_timestamp = last_timestamp + timedelta(minutes=15)
+#         memory_model = SARIMAX(df['memory'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+#         memory_results = memory_model.fit()
+#         prediction['memory'] = memory_results.forecast(steps=1)[0]
 
-    prediction = {}
+#     if 'requests' in df.columns:
+#         requests_model = SARIMAX(df['requests'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+#         requests_results = requests_model.fit()
+#         prediction['requests'] = requests_results.forecast(steps=1)[0]
 
-    # SARIMA models for each type of data
-    if 'cpu' in df.columns and 'memory' in df.columns:
-        cpu_model = SARIMAX(df['cpu'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-        cpu_results = cpu_model.fit()
-        prediction['cpu'] = cpu_results.forecast(steps=1)[0]
+#     prediction['timestamp'] = next_timestamp.strftime('%Y-%m-%d %H:%M:%S')
+#     return jsonify(prediction)
 
-        memory_model = SARIMAX(df['memory'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-        memory_results = memory_model.fit()
-        prediction['memory'] = memory_results.forecast(steps=1)[0]
 
-    if 'requests' in df.columns:
-        requests_model = SARIMAX(df['requests'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-        requests_results = requests_model.fit()
-        prediction['requests'] = requests_results.forecast(steps=1)[0]
 
-    prediction['timestamp'] = next_timestamp.strftime('%Y-%m-%d %H:%M:%S')
-    return jsonify(prediction)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+@app.route('/metrics/<model_type>')
+def metrics(model_type):
+    try:
+        # Получаем прогноз от выбранной модели
+        prediction = models[model_type].predict(pd.Timestamp.now())
+        
+        # Получаем максимальные значения из конфига
+        max_cpu = float(config.get('DEFAULT', 'MaxCpu'))
+        max_mem = float(config.get('DEFAULT', 'MaxMem'))
+        
+        # Вычисляем комбинированную метрику
+        combined_metric = max(
+            prediction['cpu'] / max_cpu * 100,
+            prediction['memory'] / max_mem * 100
+        )
+        
+        return jsonify({
+            'value': round(combined_metric, 2),
+            'timestamp': pd.Timestamp.now().isoformat()
+        })
+        
+    except KeyError:
+        return jsonify({'error': 'Invalid model type'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

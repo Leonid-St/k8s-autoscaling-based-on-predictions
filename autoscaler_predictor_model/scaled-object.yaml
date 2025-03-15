@@ -1,0 +1,43 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: polynomial-scaler
+spec:
+  scaleTargetRef:
+    name: your-deployment
+  triggers:
+  - type: external-push
+    metadata:
+      scalerAddress: "autoscaler-service:5001"
+      url: "http://autoscaler-service:5001/metrics/polynomial"
+      threshold: "80"
+
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: xgboost-scaler
+spec:
+  scaleTargetRef:
+    name: your-deployment
+  triggers:
+  - type: external-push
+    metadata:
+      scalerAddress: "autoscaler-service:5001"
+      url: "http://autoscaler-service:5001/metrics/xgboost"
+      threshold: "75"
+
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: sarima-scaler
+spec:
+  scaleTargetRef:
+    name: your-deployment
+  triggers:
+  - type: external-push
+    metadata:
+      scalerAddress: "autoscaler-service:5001"
+      url: "http://autoscaler-service:5001/metrics/sarima"
+      threshold: "85"
