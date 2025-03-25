@@ -1,0 +1,58 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Autoscaler Predictor Model API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/fit/{model_type}": {
+      "post": {
+        "summary": "Fit model",
+        "parameters": [
+          {
+            "name": "model_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Model fitted successfully"
+          }
+        }
+      }
+    },
+    "/predict/{model_type}": {
+      "get": {
+        "summary": "Get prediction",
+        "parameters": [
+          {
+            "name": "model_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timestamp",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prediction returned successfully"
+          }
+        }
+      }
+    }
+  }
+} 

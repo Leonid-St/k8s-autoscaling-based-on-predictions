@@ -5,7 +5,7 @@ class MetricsComparator:
     def __init__(self, data_retention='4H'):
         self.actual_metrics = pd.DataFrame(columns=['timestamp', 'node', 'cpu'])
         self.predicted_metrics = pd.DataFrame(columns=['timestamp', 'node', 'cpu'])
-        self.data_retention = pd.to_timedelta(data_retention)
+        self.data_retention = pd.to_timedelta(data_retention.replace('H', 'h'))
 
     def _clean_old_data(self):
         """Удаляем данные старше data_retention"""

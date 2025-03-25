@@ -2,9 +2,9 @@ import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 class SARIMAModel:
-    def __init__(self, data_retention='4H'):
+    def __init__(self, data_retention='4h'):
         self.historical_data = pd.DataFrame()
-        self.data_retention = pd.to_timedelta(data_retention)
+        self.data_retention = pd.to_timedelta(data_retention.replace('H', 'h'))
     
     def update_data(self, new_data):
         combined = pd.concat([self.historical_data, new_data])

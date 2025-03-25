@@ -69,3 +69,29 @@ class MetricsStorage:
         
         daily_accuracy['accuracy'] = 1 - daily_accuracy['relative_error']
         return daily_accuracy 
+
+    def save_errors(self, timestamp, node, absolute_error, relative_error):
+        new_data = pd.DataFrame({
+            'timestamp': [timestamp],
+            'node': [node],
+            'absolute_error': [absolute_error],
+            'relative_error': [relative_error]
+        })
+        
+        file_path = os.path.join(self.storage_path, 'errors.parquet')
+        
+        if os.path.exists(file_path):
+            existing_data = pd.read_parquet(file_path)
+            combined_data = pd.concat([existing_data, new_data])
+        else:
+            combined_data = new_data
+        
+        combined_data.to_parquet(file_path, index=False) 
+
+    def get_errors(self, start_date, end_date):
+        file_path = os.path.join(self.storage_path, 'errors.parquet')
+        if not os.path.exists(file_path):
+            return pd.DataFrame()
+        
+        errors = pd.read_parquet(file_path)
+        return errors[(errors['timestamp'] >= start_date) & (errors['timestamp'] <= end_date)] 

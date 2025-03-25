@@ -19,6 +19,8 @@ from models.sarima import SARIMAModel
 from utils.cluster_metrics import NodeMetrics
 from utils.metrics_comparator import MetricsComparator
 from utils.metrics_storage import MetricsStorage
+from flask import Flask
+from flask_swagger_ui import get_swaggerui_blueprint
 
 MODEL_PATH = '/app/models/'
 
@@ -49,18 +51,18 @@ PROMETHEUS_URL = config.get('PROMETHEUS', 'Url')
 CPU_QUERY = config.get('PROMETHEUS', 'CpuQuery')
 MEMORY_QUERY = config.get('PROMETHEUS', 'MemoryQuery')
 
-# Инициализация моделей
-models = {
-    'polynomial': PolynomialModel(),
-    'xgboost': XGBoostModel(),
-    'sarima': SARIMAModel(data_retention='4H')
-}
-
 # Инициализация коллектора
 prom_collector = PrometheusDataCollector(PROMETHEUS_URL, CPU_QUERY, MEMORY_QUERY)
 
 # Инициализация метрик кластера
 cluster_metrics = NodeMetrics(PROMETHEUS_URL)
+
+# Инициализация моделей
+models = {
+    'polynomial': PolynomialModel(),
+    'xgboost': XGBoostModel(cluster_metrics),
+    'sarima': SARIMAModel(data_retention='4H')
+}
 
 # Инициализация после других глобальных переменных
 metrics_comparator = MetricsComparator(data_retention='2H')  # Например, для хранения данных за последние 2 часа
@@ -72,7 +74,7 @@ metrics_storage = MetricsStorage(storage_path='./metrics_data', retention_period
 #         new_data = prom_collector.get_new_data()
 #         if not new_data.empty:
 #             models['xgboost'].partial_fit(new_data)
-            
+
 #             # Сбор и сохранение реальных данных
 #             for _, row in new_data.iterrows():
 #                 metrics_storage.save_metrics(
@@ -81,7 +83,7 @@ metrics_storage = MetricsStorage(storage_path='./metrics_data', retention_period
 #                     cpu_actual=row['cpu'],
 #                     cpu_predicted=None  # Реальные данные, предсказания пока нет
 #                 )
-            
+
 #             print(f"Model updated with {len(new_data)} new samples")
 #     except Exception as e:
 #         print(f"Error updating model: {str(e)}")
@@ -98,7 +100,7 @@ def update_and_predict():
         models['xgboost'].partial_fit(new_data)
 
         # 3. Создание предсказания
-        prediction_timestamp = datetime.now() + timedelta(minutes=5)  # Предсказание на 5 минут вперед
+        prediction_timestamp = datetime.now() + timedelta(minutes=5)
         prediction = models['xgboost'].predict(prediction_timestamp)
 
         # 4. Сохранение предсказания
@@ -108,6 +110,21 @@ def update_and_predict():
             'memory': [prediction['memory']]
         })
         prediction_df.to_parquet(PREDICTION_FILE, index=False)
+
+        # 5. Расчет и сохранение ошибок
+        for _, row in new_data.iterrows():
+            actual_cpu = row['cpu']
+            predicted_cpu = prediction['cpu']
+
+            absolute_error = abs(actual_cpu - predicted_cpu)
+            relative_error = absolute_error / actual_cpu if actual_cpu != 0 else 0
+
+            metrics_storage.save_errors(
+                timestamp=row['timestamp'],
+                node=row['node'],
+                absolute_error=absolute_error,
+                relative_error=relative_error
+            )
 
     except Exception as e:
         print(f"Error in update_and_predict: {str(e)}")
@@ -331,11 +348,18 @@ def get_comparison():
     comparison = metrics_comparator.get_comparison(node)
     return jsonify(comparison.to_dict(orient='records'))
 
+
 @app.route('/metrics/errors', methods=['GET'])
 def get_errors():
-    node = request.args.get('node')
-    errors = metrics_comparator.calculate_errors(node)
-    return jsonify(errors)
+    try:
+        start_date = pd.to_datetime(request.args.get('start_date'))
+        end_date = pd.to_datetime(request.args.get('end_date'))
+
+        errors = metrics_storage.get_errors(start_date, end_date)
+        return jsonify(errors.to_dict(orient='records'))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 # Добавляем новый endpoint для анализа точности
 @app.route('/metrics/accuracy', methods=['GET'])
@@ -343,11 +367,12 @@ def get_accuracy():
     try:
         start_date = pd.to_datetime(request.args.get('start_date'))
         end_date = pd.to_datetime(request.args.get('end_date'))
-        
+
         accuracy_data = metrics_storage.calculate_accuracy_over_time(start_date, end_date)
         return jsonify(accuracy_data.to_dict(orient='records'))
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 # Endpoint для получения последнего предсказания
 @app.route('/predict/latest', methods=['GET'])
@@ -364,3 +389,7 @@ def get_latest_prediction():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

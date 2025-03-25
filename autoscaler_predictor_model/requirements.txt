@@ -43,3 +43,5 @@ apscheduler==3.10.1
 requests==2.31.0
 prometheus-client
 kubernetes==25.3.0
+xgboost
+flask-swagger-ui

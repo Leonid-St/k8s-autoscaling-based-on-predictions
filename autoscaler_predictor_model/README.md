@@ -35,7 +35,10 @@ echo 'eval "$(pyenv init --path)"' >> ~/.zshrc
 echo 'eval "$(pyenv init -)"' >> ~/.zshrc
 ```
 
-
+env package :
+```
+brew install libomp
+```
 ```bash
 deactivate
 rm -rf autoscaler_predictor_model/venv
@@ -122,11 +125,16 @@ example of response :
 ```
 
 
-### Metric accuracy 
+### Metric middle accuracy over time
 ```
 curl "http://localhost:5001/metrics/accuracy?start_date=2024-01-01&end_date=2024-03-01"
 ```
 
+### historical error
+
+```
+curl "http://localhost:5001/metrics/errors?start_date=2024-01-01&end_date=2024-03-01"
+```
 
 ## Automatic Prediction and Model Updates
 
