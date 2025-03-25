@@ -5,17 +5,20 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
 from sklearn.exceptions import NotFittedError
-from datetime import timedelta
+from datetime import timedelta, datetime
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import configparser
 from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import PrometheusDataCollector
+import os
 
 from utils.file_processor import process_uploaded_file
 from models.polynomial import PolynomialModel
 from models.xgboost import XGBoostModel
 from models.sarima import SARIMAModel
 from utils.cluster_metrics import NodeMetrics
+from utils.metrics_comparator import MetricsComparator
+from utils.metrics_storage import MetricsStorage
 
 MODEL_PATH = '/app/models/'
 
@@ -29,6 +32,10 @@ requests_model = None
 # Добавить глобальные переменные
 historical_data = pd.DataFrame()
 DATA_RETENTION = timedelta(hours=4)  # Храним 4 часа данных
+
+# Добавляем глобальные переменные
+PREDICTION_FILE = './predictions/latest_prediction.parquet'
+os.makedirs('./predictions', exist_ok=True)
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -55,21 +62,62 @@ prom_collector = PrometheusDataCollector(PROMETHEUS_URL, CPU_QUERY, MEMORY_QUERY
 # Инициализация метрик кластера
 cluster_metrics = NodeMetrics(PROMETHEUS_URL)
 
+# Инициализация после других глобальных переменных
+metrics_comparator = MetricsComparator(data_retention='2H')  # Например, для хранения данных за последние 2 часа
+metrics_storage = MetricsStorage(storage_path='./metrics_data', retention_period=timedelta(days=365))
 
-def update_model_from_prometheus():
+
+# def update_model_from_prometheus():
+#     try:
+#         new_data = prom_collector.get_new_data()
+#         if not new_data.empty:
+#             models['xgboost'].partial_fit(new_data)
+            
+#             # Сбор и сохранение реальных данных
+#             for _, row in new_data.iterrows():
+#                 metrics_storage.save_metrics(
+#                     timestamp=row['timestamp'],
+#                     node=row['node'],
+#                     cpu_actual=row['cpu'],
+#                     cpu_predicted=None  # Реальные данные, предсказания пока нет
+#                 )
+            
+#             print(f"Model updated with {len(new_data)} new samples")
+#     except Exception as e:
+#         print(f"Error updating model: {str(e)}")
+
+
+def update_and_predict():
     try:
+        # 1. Сбор данных
         new_data = prom_collector.get_new_data()
-        if not new_data.empty:
-            models['xgboost'].partial_fit(new_data)
-            print(f"Model updated with {len(new_data)} new samples")
+        if new_data.empty:
+            return
+
+        # 2. Дообучение модели
+        models['xgboost'].partial_fit(new_data)
+
+        # 3. Создание предсказания
+        prediction_timestamp = datetime.now() + timedelta(minutes=5)  # Предсказание на 5 минут вперед
+        prediction = models['xgboost'].predict(prediction_timestamp)
+
+        # 4. Сохранение предсказания
+        prediction_df = pd.DataFrame({
+            'timestamp': [prediction_timestamp],
+            'cpu': [prediction['cpu']],
+            'memory': [prediction['memory']]
+        })
+        prediction_df.to_parquet(PREDICTION_FILE, index=False)
+
     except Exception as e:
-        print(f"Error updating model: {str(e)}")
+        print(f"Error in update_and_predict: {str(e)}")
 
 
 # Добавить планировщик
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=update_model_from_prometheus, trigger="interval", minutes=5)
+# scheduler.add_job(func=update_model_from_prometheus, trigger="interval", minutes=5)
 scheduler.add_job(func=cluster_metrics.collect_cluster_metrics, trigger="interval", minutes=2)
+scheduler.add_job(func=update_and_predict, trigger="interval", minutes=1)
 scheduler.start()
 
 
@@ -126,25 +174,23 @@ def predict(model_type):
             return jsonify({'error': 'Missing timestamp'}), 400
 
         timestamp = pd.to_datetime(timestamp_str)
+        result = models[model_type].predict(timestamp)
 
-        if model_type == 'polynomial':
-            features = [[timestamp.hour * 60 + timestamp.minute]]
-            result = models[model_type].predict(features, 'resource')
-        elif model_type == 'xgboost':
-            result = models[model_type].predict(timestamp)
-        elif model_type == 'sarima':
-            result = models[model_type].forecast()
-            if result is None:
-                return jsonify({'error': 'Not enough historical data for SARIMA'}), 400
-        else:
-            return jsonify({'error': 'Invalid model type'}), 400
+        # Сбор и сохранение предсказанных данных
+        cluster_state = cluster_metrics.get_cluster_state()
+        for node, metrics in cluster_state['nodes'].items():
+            metrics_storage.save_metrics(
+                timestamp=timestamp,
+                node=node,
+                cpu_actual=None,  # Предсказание, реальных данных пока нет
+                cpu_predicted=result['cpu']
+            )
 
         return jsonify({
             'model': model_type,
             'timestamp': timestamp.isoformat(),
             **result
         })
-
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -276,3 +322,45 @@ def scaling_decision(prediction):
     elif predicted_load < config['scale_down'] and current_state['total_nodes'] > config['min_nodes']:
         return {'action': 'scale_down', 'by': config['step']}
     return {'action': 'no_op'}
+
+
+# Добавьте новый endpoint для получения сравнения
+@app.route('/metrics/comparison', methods=['GET'])
+def get_comparison():
+    node = request.args.get('node')
+    comparison = metrics_comparator.get_comparison(node)
+    return jsonify(comparison.to_dict(orient='records'))
+
+@app.route('/metrics/errors', methods=['GET'])
+def get_errors():
+    node = request.args.get('node')
+    errors = metrics_comparator.calculate_errors(node)
+    return jsonify(errors)
+
+# Добавляем новый endpoint для анализа точности
+@app.route('/metrics/accuracy', methods=['GET'])
+def get_accuracy():
+    try:
+        start_date = pd.to_datetime(request.args.get('start_date'))
+        end_date = pd.to_datetime(request.args.get('end_date'))
+        
+        accuracy_data = metrics_storage.calculate_accuracy_over_time(start_date, end_date)
+        return jsonify(accuracy_data.to_dict(orient='records'))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Endpoint для получения последнего предсказания
+@app.route('/predict/latest', methods=['GET'])
+def get_latest_prediction():
+    try:
+        if not os.path.exists(PREDICTION_FILE):
+            return jsonify({'error': 'No predictions available'}), 404
+
+        prediction = pd.read_parquet(PREDICTION_FILE).iloc[-1].to_dict()
+        return jsonify({
+            'timestamp': prediction['timestamp'].isoformat(),
+            'cpu': prediction['cpu'],
+            'memory': prediction['memory']
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

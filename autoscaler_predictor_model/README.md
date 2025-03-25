@@ -122,6 +122,53 @@ example of response :
 ```
 
 
+### Metric accuracy 
+```
+curl "http://localhost:5001/metrics/accuracy?start_date=2024-01-01&end_date=2024-03-01"
+```
+
+
+## Automatic Prediction and Model Updates
+
+The application now automatically:
+1. Collects metrics from Prometheus every minute
+2. Updates the XGBoost model with new data
+3. Makes predictions 5 minutes ahead
+4. Stores predictions in a file for quick access
+
+### New API Endpoints
+
+#### Get Latest Prediction
+
+```
+GET /predict/latest
+```
+
+```
+{
+"timestamp": "2024-03-15T14:35:00",
+"cpu": 0.75,
+"memory": 0.65
+}
+```
+
+
+### Storage Details
+- Predictions are stored in `./predictions/latest_prediction.parquet`
+- Historical metrics are stored in `./metrics_data/` with daily files
+- Data retention: 365 days for metrics, latest prediction only
+
+### Automatic Workflow
+The background scheduler performs these steps every minute:
+1. Collects new metrics from Prometheus
+2. Updates the XGBoost model with partial_fit
+3. Makes a prediction 5 minutes ahead
+4. Saves the prediction to file
+
+### Error Handling
+- Failed Prometheus queries are logged and retried
+- Model update failures are logged but don't stop the process
+- Missing prediction files return 404 status
 
 
 
@@ -170,3 +217,4 @@ spec:
         threshold: "80"
 
 ```
+
