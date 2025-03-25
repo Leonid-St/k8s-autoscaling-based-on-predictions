@@ -39,3 +39,7 @@ urllib3==2.1.0
 Werkzeug==3.0.1
 zipp==3.17.0
 sklearn
+apscheduler==3.10.1
+requests==2.31.0
+prometheus-client
+kubernetes==25.3.0

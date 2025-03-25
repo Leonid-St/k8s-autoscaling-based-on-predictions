@@ -4,13 +4,20 @@ from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator
 
 class XGBoostModel:
-    def __init__(self):
+    def __init__(self, cluster_metrics):
         self.cpu_model = XGBRegressor()
         self.memory_model = XGBRegressor()
+        self.cluster_metrics = cluster_metrics
     
     def partial_fit(self, df):
         if df.empty:
             raise ValueError("Empty training data")
+        
+        # Добавляем метрики кластера в фичи
+        cluster_state = self.cluster_metrics.get_cluster_state()
+        df['active_nodes'] = cluster_state['total_nodes']
+        df['avg_cluster_cpu'] = cluster_state['average_cpu']
+        df['avg_cluster_mem'] = cluster_state['average_memory']
         
         features = self._create_features(df)
         

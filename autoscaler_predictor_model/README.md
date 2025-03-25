@@ -1,6 +1,11 @@
 # autoscaler_predictor_model
 The data synthesizer, forecaster and predictor model server used together with KEDA scaler or cluster autoscaler to achieve cluster autoscaling with diurnal pattern workload
-
+```
+Ensure that the cluster has the following installed:
+kube-state-metrics
+node-exporter
+prometheus-operator
+```
 ## How to use the data synthesizer
 ### Set up python virtual environment
 
@@ -103,11 +108,11 @@ curl -X POST http://127.0.0.1:5001/forecast \
 - The model fitting is simplistic and assumes a polynomial model. You may need to adjust the model fitting part based on your specific requirements.
 
 ### Autoscaling Endpoints:
-- `/metrics/<model_type>` - комбинированная метрика (макс. из CPU/RAM)
-- `/metrics/<model_type>/cpu` - метрика только по CPU
-- `/metrics/<model_type>/memory` - метрика только по RAM
+- `/metrics/<model_type>` - combined metric (ma from CPU/RAM)
+- `/metrics/<model_type>/cpu` - CPU-only metrics
+- `/metrics/<model_type>/memory` - RAM-only metrics
 
-Пример ответа:
+example of response :
 
 ```json
 {
@@ -120,7 +125,7 @@ curl -X POST http://127.0.0.1:5001/forecast \
 
 
 
-Пример для KEDA:
+example  ScaledObject KEDA :
 ```yaml
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
