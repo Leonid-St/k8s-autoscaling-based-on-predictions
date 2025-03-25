@@ -10,7 +10,7 @@ class MetricsStorage:
 
     def _get_file_path(self, timestamp):
         date_str = timestamp.strftime('%Y-%m-%d')
-        return os.path.join(self.storage_path, f'metrics_{date_str}.parquet')
+        return os.path.join(self.storage_path, f'metrics_{date_str}.csv')
 
     def save_metrics(self, timestamp, node, cpu_actual, cpu_predicted):
         new_data = pd.DataFrame({
@@ -23,12 +23,12 @@ class MetricsStorage:
         file_path = self._get_file_path(timestamp)
         
         if os.path.exists(file_path):
-            existing_data = pd.read_parquet(file_path)
+            existing_data = pd.read_csv(file_path)
             combined_data = pd.concat([existing_data, new_data])
         else:
             combined_data = new_data
 
-        combined_data.to_parquet(file_path, index=False)
+        combined_data.to_csv(file_path, index=False)
         self._clean_old_files()
 
     def _clean_old_files(self):
@@ -45,7 +45,8 @@ class MetricsStorage:
         while current_date <= end_date:
             file_path = self._get_file_path(current_date)
             if os.path.exists(file_path):
-                daily_metrics = pd.read_parquet(file_path)
+                daily_metrics = pd.read_csv(file_path)
+                daily_metrics['timestamp'] = pd.to_datetime(daily_metrics['timestamp'])
                 metrics.append(daily_metrics)
             current_date += timedelta(days=1)
         
@@ -78,20 +79,20 @@ class MetricsStorage:
             'relative_error': [relative_error]
         })
         
-        file_path = os.path.join(self.storage_path, 'errors.parquet')
+        file_path = os.path.join(self.storage_path, 'errors.csv')
         
         if os.path.exists(file_path):
-            existing_data = pd.read_parquet(file_path)
+            existing_data = pd.read_csv(file_path)
             combined_data = pd.concat([existing_data, new_data])
         else:
             combined_data = new_data
         
-        combined_data.to_parquet(file_path, index=False) 
+        combined_data.to_csv(file_path, index=False) 
 
     def get_errors(self, start_date, end_date):
-        file_path = os.path.join(self.storage_path, 'errors.parquet')
+        file_path = os.path.join(self.storage_path, 'errors.csv')
         if not os.path.exists(file_path):
             return pd.DataFrame()
         
-        errors = pd.read_parquet(file_path)
+        errors = pd.read_csv(file_path)
         return errors[(errors['timestamp'] >= start_date) & (errors['timestamp'] <= end_date)] 

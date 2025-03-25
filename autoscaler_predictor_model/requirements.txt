@@ -45,3 +45,4 @@ prometheus-client
 kubernetes==25.3.0
 xgboost
 flask-swagger-ui
+pyarrow

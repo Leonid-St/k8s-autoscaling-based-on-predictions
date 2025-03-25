@@ -7,7 +7,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.exceptions import NotFittedError
 from datetime import timedelta, datetime
 from statsmodels.tsa.statespace.sarimax import SARIMAX
-import configparser
+from configparser import ConfigParser
 from apscheduler.schedulers.background import BackgroundScheduler
 from prometheus_client import PrometheusDataCollector
 import os
@@ -39,7 +39,8 @@ DATA_RETENTION = timedelta(hours=4)  # Храним 4 часа данных
 PREDICTION_FILE = './predictions/latest_prediction.parquet'
 os.makedirs('./predictions', exist_ok=True)
 
-config = configparser.ConfigParser()
+# Инициализация конфигурации
+config = ConfigParser()
 config.read('config.ini')
 
 # CPU: container_cpu_usage_seconds_total
@@ -322,23 +323,20 @@ def metrics_memory(model_type):
         return jsonify({'error': str(e)}), 500
 
 
-def scaling_decision(prediction):
-    config = {
-        'scale_up': float(config.get('AUTOSCALER', 'ScaleUpThreshold')),
-        'scale_down': float(config.get('AUTOSCALER', 'ScaleDownThreshold')),
-        'max_nodes': int(config.get('AUTOSCALER', 'MaxNodes')),
-        'min_nodes': int(config.get('AUTOSCALER', 'MinNodes')),
-        'step': int(config.get('AUTOSCALER', 'ScaleStep'))
-    }
-
-    current_state = cluster_metrics.get_cluster_state()
-    predicted_load = prediction['value']
-
-    if predicted_load > config['scale_up'] and current_state['total_nodes'] < config['max_nodes']:
-        return {'action': 'scale_up', 'by': config['step']}
-    elif predicted_load < config['scale_down'] and current_state['total_nodes'] > config['min_nodes']:
-        return {'action': 'scale_down', 'by': config['step']}
-    return {'action': 'no_op'}
+# def scaling_decision(current_cpu_usage):
+#     scale_up_threshold = config.getfloat('AUTOSCALER', 'ScaleUpThreshold')
+#     scale_down_threshold = config.getfloat('AUTOSCALER', 'ScaleDownThreshold')
+#     max_nodes = config.getint('AUTOSCALER', 'MaxNodes')
+#     min_nodes = config.getint('AUTOSCALER', 'MinNodes')
+#     scale_step = config.getint('AUTOSCALER', 'ScaleStep')
+#     # Получаем текущее количество нод
+#     current_nodes = cluster_metrics.get_cluster_state()['total_nodes']
+#     # Логика принятия решения о масштабировании
+#     if current_cpu_usage > scale_up_threshold:
+#         return min(max_nodes, current_nodes + scale_step)
+#     elif current_cpu_usage < scale_down_threshold:
+#         return max(min_nodes, current_nodes - scale_step)
+#     return current_nodes
 
 
 # Добавьте новый endpoint для получения сравнения
