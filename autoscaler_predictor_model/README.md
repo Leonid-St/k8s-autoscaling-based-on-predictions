@@ -136,7 +136,7 @@ The application now automatically:
 3. Makes predictions 5 minutes ahead
 4. Stores predictions in a file for quick access
 
-### New API Endpoints
+###  API Endpoints for Latest 5 min prediction
 
 #### Get Latest Prediction
 
