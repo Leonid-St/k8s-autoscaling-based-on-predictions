@@ -42,7 +42,7 @@ def utilization_pattern(time, peak_time, min_val, max_val, variation):
 #  The minimum CPU usage can drop to 20 vCPU cores and the minimum memory usage can drop to 20 GB.
 #  The diurnal and weekly patterns are significant with very small variations across a particular time in a day.
 #  The variations are within 10 vCPUs and 10 GB memory.
-def synthesize_data(num_weeks, type='resource'):
+def synthesize_data(num_weeks, type='resource',save_to_file=True):
     # Constants
     period = num_weeks * 7 * 24 * 60  # 4 weeks in minutes
 
@@ -73,6 +73,13 @@ def synthesize_data(num_weeks, type='resource'):
         ts_df = pd.DataFrame({'timestamp': timestamps, 'requests': requests_ts})
 
     ts_df.set_index('timestamp', inplace=True)
+    
+    if save_to_file:
+        current_time_string = datetime.now().strftime("%y-%m-%d-%H-%M")
+        filename = f'./data/{type}-{current_time_string}.csv'
+        ts_df.to_csv(filename)
+        return ts_df, filename
+    
     return ts_df
 
 def plot_synthesized_data(df, type='resource'):
