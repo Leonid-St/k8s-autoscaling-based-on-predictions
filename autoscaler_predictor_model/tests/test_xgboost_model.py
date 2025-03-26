@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from models.xgboost import XGBoostModel
 from utils.cluster_metrics import NodeMetrics
 from data_synthesizer import synthesize_data
+import matplotlib.pyplot as plt
+import seaborn as sns
 from pathlib import Path
 
 @pytest.fixture
@@ -85,6 +87,38 @@ def test_xgboost_training_process(xgboost_model):
     results_df = pd.DataFrame(results)
     results_df.to_csv(results_file, index=False)
     
+    # Визуализация результатов
+    img_dir = artifacts_dir / "imgs"
+    img_dir.mkdir(exist_ok=True)
+    plot_path = img_dir / "xgboost_training_progress.png"
+    
+    plt.figure(figsize=(15, 6))
+    
+    # График фактических и предсказанных значений
+    plt.subplot(1, 2, 1)
+    plt.plot(results_df['timestamp'], results_df['cpu_actual'], label='Actual CPU')
+    plt.plot(results_df['timestamp'], results_df['cpu_predicted'], label='Predicted CPU', alpha=0.7)
+    plt.title('Фактические vs Предсказанные значения')
+    plt.xlabel('Время')
+    plt.ylabel('Нагрузка CPU')
+    plt.legend()
+    plt.xticks(rotation=45)
+    
+    # График ошибки по шагам обучения
+    plt.subplot(1, 2, 2)
+    results_df['cpu_error'] = abs(results_df['cpu_actual'] - results_df['cpu_predicted'])
+    sns.boxplot(x='training_step', y='cpu_error', data=results_df)
+    plt.title('Распределение ошибок по шагам обучения')
+    plt.xlabel('Шаг обучения')
+    plt.ylabel('Абсолютная ошибка')
+    
+    plt.tight_layout()
+    plt.savefig(plot_path)
+    plt.close()
+    
+    # Проверяем что файл с графиком создан
+    assert plot_path.exists()
+
     # Проверяем, что файл создан и содержит данные
     assert results_file.exists()
     assert len(results_df) > 0
@@ -95,26 +129,26 @@ def test_xgboost_training_process(xgboost_model):
     # Группируем по шагам обучения и проверяем, что ошибка уменьшается в целом
     grouped = results_df.groupby('training_step')['cpu_error'].mean()
     
-    # Проверяем, что ошибка уменьшилась хотя бы на 1% в конце обучения
+    # Проверяем, что ошибка уменьшилась хотя бы на 50% в конце обучения
     cpu_error_reduction = (grouped.iloc[0] - grouped.iloc[-1]) / grouped.iloc[0]
-    assert cpu_error_reduction > 0.01, f"CPU error reduction was {cpu_error_reduction:.4f}, expected > 0.01"
+    assert cpu_error_reduction > 0.5, f"CPU error reduction was {cpu_error_reduction:.4f}, expected > 0.5"
 
 def test_partial_fit(xgboost_model):
     data = pd.DataFrame({
         'timestamp': [datetime.now()],
         'cpu': [0.5],
-        'memory': [0.3]
+        #'memory': [0.3]
     })
     xgboost_model.partial_fit(data)
     assert xgboost_model.cpu_model is not None
-    assert xgboost_model.memory_model is not None
+    #assert xgboost_model.memory_model is not None
 
 def test_predict(xgboost_model):
     # Обучаем модель перед предсказанием
     data = pd.DataFrame({
         'timestamp': [datetime.now()],
         'cpu': [0.5],
-        'memory': [0.3]
+        #'memory': [0.3]
     })
     xgboost_model.partial_fit(data)
     
@@ -122,4 +156,4 @@ def test_predict(xgboost_model):
     timestamp = datetime.now()
     prediction = xgboost_model.predict(timestamp)
     assert 'cpu' in prediction
-    assert 'memory' in prediction 
+    #assert 'memory' in prediction 

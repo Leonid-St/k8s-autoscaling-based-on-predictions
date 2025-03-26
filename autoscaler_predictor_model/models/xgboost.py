@@ -13,7 +13,7 @@ class XGBoostModel:
             subsample=0.8,
             colsample_bytree=0.8,
             objective='reg:quantileerror',
-            quant_alpha=0.9,  # 90-й перцентиль
+            quantile_alpha=0.9,  # 90-й перцентиль
             n_jobs=-1  # Используем все ядра CPU
         )
         self.memory_model = XGBRegressor(
@@ -23,7 +23,7 @@ class XGBoostModel:
             subsample=0.8,
             colsample_bytree=0.8,
             objective='reg:quantileerror',
-            quant_alpha=0.9,
+            quantile_alpha=0.9,
             n_jobs=-1  # Используем все ядра CPU
         )
         self.cluster_metrics = cluster_metrics
@@ -89,12 +89,4 @@ class XGBoostModel:
         df['month'] = df['timestamp'].dt.month
         df['is_weekend'] = df['day_of_week'] >= 5
         df['minutes_since_midnight'] = df['timestamp'].dt.hour * 60 + df['timestamp'].dt.minute
-        
-        # Добавляем скользящие фичи
-        for window in [60, 120, 240]:  # минуты
-            df[f'rolling_cpu_{window}'] = df['cpu'].rolling(f'{window}T', min_periods=1).mean()
-            df[f'rolling_mem_{window}'] = df['memory'].rolling(f'{window}T', min_periods=1).mean()
-        
-        return df[['hour', 'day_of_week', 'month', 'is_weekend', 'minutes_since_midnight',
-                  'rolling_cpu_60', 'rolling_cpu_120', 'rolling_cpu_240',
-                  'rolling_mem_60', 'rolling_mem_120', 'rolling_mem_240']]
+        return df[['hour', 'day_of_week', 'month', 'is_weekend', 'minutes_since_midnight']]
