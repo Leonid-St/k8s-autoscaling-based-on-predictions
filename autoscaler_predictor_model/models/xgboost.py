@@ -2,31 +2,33 @@ from xgboost import XGBRegressor
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 
 class XGBoostModel:
     def __init__(self, cluster_metrics):
         self.cpu_model = XGBRegressor(
-            n_estimators=200,
-            max_depth=6,
-            learning_rate=0.05,
-            subsample=0.9,
-            colsample_bytree=0.9,
-            objective='reg:squarederror',
+            n_estimators=500,  # Увеличиваем количество деревьев
+            max_depth=8,
+            learning_rate=0.01,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            objective='reg:quantileerror',
+            quant_alpha=0.9,  # 90-й перцентиль
             n_jobs=-1  # Используем все ядра CPU
         )
         self.memory_model = XGBRegressor(
-            n_estimators=200,
-            max_depth=6,
-            learning_rate=0.05,
-            subsample=0.9,
-            colsample_bytree=0.9,
-            objective='reg:squarederror',
+            n_estimators=500,
+            max_depth=8,
+            learning_rate=0.01,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            objective='reg:quantileerror',
+            quant_alpha=0.9,
             n_jobs=-1  # Используем все ядра CPU
         )
         self.cluster_metrics = cluster_metrics
-        self.cpu_scaler = StandardScaler()
-        self.memory_scaler = StandardScaler()
+        self.cpu_scaler = MinMaxScaler(feature_range=(0, 1))
+        self.memory_scaler = MinMaxScaler(feature_range=(0, 1))
         self._cpu_fitted = False
         self._memory_fitted = False
     
@@ -44,31 +46,41 @@ class XGBoostModel:
         features = self._create_features(df)
         
         if 'cpu' in df.columns:
-            cpu_target = self.cpu_scaler.fit_transform(df[['cpu']])
+            cpu_target = df[['cpu']].values
+            
             if self._cpu_fitted:
-                self.cpu_model.fit(features, cpu_target, xgb_model=self.cpu_model.get_booster())
+                self.cpu_model.fit(
+                    features, 
+                    cpu_target,
+                    xgb_model=self.cpu_model.get_booster(),
+                    eval_set=[(features, cpu_target)],
+                    early_stopping_rounds=10
+                )
             else:
                 self.cpu_model.fit(features, cpu_target)
                 self._cpu_fitted = True
         
         if 'memory' in df.columns:
-            memory_target = self.memory_scaler.fit_transform(df[['memory']])
+            memory_target = df[['memory']].values
+            
             if self._memory_fitted:
-                self.memory_model.fit(features, memory_target, xgb_model=self.memory_model.get_booster())
+                self.memory_model.fit(
+                    features,
+                    memory_target,
+                    xgb_model=self.memory_model.get_booster(),
+                    eval_set=[(features, memory_target)],
+                    early_stopping_rounds=10
+                )
             else:
                 self.memory_model.fit(features, memory_target)
                 self._memory_fitted = True
     
     def predict(self, timestamp):
         features = self._create_features(pd.DataFrame({'timestamp': [timestamp]}))
-        cpu_pred = self.cpu_model.predict(features)
-        memory_pred = self.memory_model.predict(features)
+        cpu_pred = self.cpu_model.predict(features)[0]
         
-        # Обратная нормализация данных
-        return {
-            'cpu': self.cpu_scaler.inverse_transform([cpu_pred])[0][0],
-            'memory': self.memory_scaler.inverse_transform([memory_pred])[0][0]
-        }
+        # Убираем inverse_transform и ограничения
+        return {'cpu': max(0, cpu_pred)}
     
     def _create_features(self, df):
         df = df.copy()
@@ -77,4 +89,12 @@ class XGBoostModel:
         df['month'] = df['timestamp'].dt.month
         df['is_weekend'] = df['day_of_week'] >= 5
         df['minutes_since_midnight'] = df['timestamp'].dt.hour * 60 + df['timestamp'].dt.minute
-        return df[['hour', 'day_of_week', 'month', 'is_weekend', 'minutes_since_midnight']]
+        
+        # Добавляем скользящие фичи
+        for window in [60, 120, 240]:  # минуты
+            df[f'rolling_cpu_{window}'] = df['cpu'].rolling(f'{window}T', min_periods=1).mean()
+            df[f'rolling_mem_{window}'] = df['memory'].rolling(f'{window}T', min_periods=1).mean()
+        
+        return df[['hour', 'day_of_week', 'month', 'is_weekend', 'minutes_since_midnight',
+                  'rolling_cpu_60', 'rolling_cpu_120', 'rolling_cpu_240',
+                  'rolling_mem_60', 'rolling_mem_120', 'rolling_mem_240']]
