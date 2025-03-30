@@ -48,3 +48,5 @@ flask-swagger-ui
 pyarrow
 matplotlib
 seaborn
+holidays
+prophet
