@@ -307,6 +307,7 @@ if __name__ == '__main__':
     import pandas as pd
     from prophet import Prophet
     from scipy import stats
+    from scipy.special import inv_boxcox
 
     data = pd.read_csv("resource-25-03-26-12-49.csv")
     data_cpu = data.drop(data.columns[[2]], axis=1)
@@ -329,6 +330,11 @@ if __name__ == '__main__':
     april_may_data = data_cpu[(data_cpu['timestamp'].dt.year == 2025) &
                               (data_cpu['timestamp'].dt.month.isin([4, 5]))]
 
+    # Переименование колонки 'timestamp' в 'ds'
+    april_may_data = april_may_data.rename(columns={'timestamp': 'ds'})
+    # Переименование колонки 'cpu' в 'y'
+    april_may_data = april_may_data.rename(columns={'cpu': 'y'})
+
     DATA = april_may_data.copy()
 
     print("BEFORE BOXCOX")
@@ -337,7 +343,7 @@ if __name__ == '__main__':
     print(DATA.info())
     print("-----------------------------------")
     DATA = DATA.copy()
-    DATA['cpu'], lmbd = stats.boxcox(DATA['cpu'])
+    DATA['y'], lmbd = stats.boxcox(DATA['y'])
 
     print("AFTER BOXCOX")
     print("-----------------------------------")
@@ -353,11 +359,8 @@ if __name__ == '__main__':
     train_df = DATA[:-predictions]
     train_df.head()
 
-    # Переименование колонки 'timestamp' в 'ds'
-    DATA = DATA.rename(columns={'timestamp': 'ds'})
+    april_may_data_df = april_may_data[:-predictions]
 
-    # Переименование колонки 'cpu' в 'y'
-    DATA = DATA.rename(columns={'cpu': 'y'})
 
     # Вкидываем праздники, для их учёта моделькой
     holidays_dict = holidays.RU(years=2025)
@@ -378,19 +381,19 @@ if __name__ == '__main__':
     from prophet.diagnostics import performance_metrics
     from prophet.plot import plot_cross_validation_metric
 
-    param_grid = {
-        'changepoint_prior_scale': [0.25, 0.05, 0.1],  ## по умолчанию 0.05, попробуем увеличить и уменьшить в два раза
-        'seasonality_prior_scale': [5.0, 10.0, 20.0],  ## по умолчанию 10.0, попробуем увеличить и уменьшить в два раза
-        'holidays_prior_scale': [5.0, 10.0, 20.0],  ## по умолчанию 10.0, попробуем увеличить и уменьшить в два раза
-    }
+    # param_grid = {
+    #     'changepoint_prior_scale': [0.25, 0.05, 0.1],  ## по умолчанию 0.05, попробуем увеличить и уменьшить в два раза
+    #     'seasonality_prior_scale': [5.0, 10.0, 20.0],  ## по умолчанию 10.0, попробуем увеличить и уменьшить в два раза
+    #     'holidays_prior_scale': [5.0, 10.0, 20.0],  ## по умолчанию 10.0, попробуем увеличить и уменьшить в два раза
+    # }
 
     # Создаем все комбинации параметров
-    all_params = [dict(zip(param_grid.keys(), v)) for v in itertools.product(*param_grid.values())]
-    mapes = []  # Сюда будем складывать метрику MAPE
+    # all_params = [dict(zip(param_grid.keys(), v)) for v in itertools.product(*param_grid.values())]
+    # mapes = []  # Сюда будем складывать метрику MAPE
 
     # Создаем все комбинации параметров
-    all_params = [dict(zip(param_grid.keys(), v)) for v in itertools.product(*param_grid.values())]
-    mapes = []  # Сюда будем складывать метрику MAPE
+    # all_params = [dict(zip(param_grid.keys(), v)) for v in itertools.product(*param_grid.values())]
+    # mapes = []  # Сюда будем складывать метрику MAPE
 
     # period = столько, сколько мы хотим предсказывать
     # horizon = period * 2
@@ -399,19 +402,102 @@ if __name__ == '__main__':
     # подробнее тут - https://ranalytics.github.io/tsa-with-r/ch-intro-to-prophet.html#sec-prophet-optimal-model
 
     # Крутим кроссвалидацию со всеми комбинациями параметров
-    for params in all_params:
-        m = Prophet(**params, holidays=df_holidays, daily_seasonality=True, weekly_seasonality=True,
-                    yearly_seasonality="auto").fit(DATA)  # Fit model with given params
-        df_cv = cross_validation(m, initial='7 days', period='1 days', horizon='2 days', parallel='processes')
-        df_p = performance_metrics(df_cv,
-                                   rolling_window=1)  # тут окно для подсчета метрики 1, чтобы метрика считалась по
-        # всему горизонту
-        mapes.append(df_p['mape'].values[0])
+    # for params in all_params:
+    #     m = Prophet(**params, holidays=df_holidays, daily_seasonality=True, weekly_seasonality=True,
+    #                 yearly_seasonality="auto").fit(DATA)  # Fit model with given params
+    #     df_cv = cross_validation(m, initial='7 days', period='1 days', horizon='2 days', parallel='processes')
+    #     df_p = performance_metrics(df_cv,
+    #                                rolling_window=1)  # тут окно для подсчета метрики 1, чтобы метрика считалась по
+    #     # всему горизонту
+    #     mapes.append(df_p['mape'].values[0])
+    #
+    # # Смотрим на результаты с разными параметрами
+    # tuning_results = pd.DataFrame(all_params)
+    # tuning_results['mape'] = mapes
+    # print(tuning_results)
+    # # Отображаем лучшие параметры
+    # best_params = all_params[np.argmin(mapes)]
+    # print(best_params)
+    #     changepoint_prior_scale  seasonality_prior_scale  holidays_prior_scale      mape
+    # 0                      0.25                      5.0                   5.0  0.114762
+    # 1                      0.25                      5.0                  10.0  0.114762
+    # 2                      0.25                      5.0                  20.0  0.114751
+    # 3                      0.25                     10.0                   5.0  0.114748
+    # 4                      0.25                     10.0                  10.0  0.114755
+    # 5                      0.25                     10.0                  20.0  0.114753
+    # 6                      0.25                     20.0                   5.0  0.114791
+    # 7                      0.25                     20.0                  10.0  0.114796
+    # 8                      0.25                     20.0                  20.0  0.114801
+    # 9                      0.05                      5.0                   5.0  0.114646
+    # 10                     0.05                      5.0                  10.0  0.114627
+    # 11                     0.05                      5.0                  20.0  0.114643
+    # 12                     0.05                     10.0                   5.0  0.114637
+    # 13                     0.05                     10.0                  10.0  0.114637
+    # 14                     0.05                     10.0                  20.0  0.114639
+    # 15                     0.05                     20.0                   5.0  0.114620
+    # 16                     0.05                     20.0                  10.0  0.114619
+    # 17                     0.05                     20.0                  20.0  0.114609
+    # 18                     0.10                      5.0                   5.0  0.114672
+    # 19                     0.10                      5.0                  10.0  0.114674
+    # 20                     0.10                      5.0                  20.0  0.114677
+    # 21                     0.10                     10.0                   5.0  0.114682
+    # 22                     0.10                     10.0                  10.0  0.114680
+    # 23                     0.10                     10.0                  20.0  0.114690
+    # 24                     0.10                     20.0                   5.0  0.114674
+    # 25                     0.10                     20.0                  10.0  0.114674
+    # 26                     0.10                     20.0                  20.0  0.114671
+    # {'changepoint_prior_scale': 0.05, 'seasonality_prior_scale': 20.0, 'holidays_prior_scale': 20.0}
+    # Настраиваем prophet – говорим ему учитывать праздники и сезонности
+    # Подробнее тут - https://ranalytics.github.io/tsa-with-r/ch-intro-to-prophet.html#sec-prophet-seasonal-components
+    m = Prophet(
+        holidays=df_holidays,
+        daily_seasonality="auto",
+        weekly_seasonality="auto",
+        yearly_seasonality="auto",
+        changepoint_prior_scale=0.5,
+        seasonality_prior_scale=10,
+        holidays_prior_scale=0.00005,
+        # growth='flat',
+        growth='logistic',
+    )
 
-    # Смотрим на результаты с разными параметрами
-    tuning_results = pd.DataFrame(all_params)
-    tuning_results['mape'] = mapes
-    print(tuning_results)
-    # Отображаем лучшие параметры
-    best_params = all_params[np.argmin(mapes)]
-    print(best_params)
+    # Добавление пользовательской сезонности с периодом 96 (15 минут)
+    m.add_seasonality(name='quarterly', period=96, fourier_order=5000)
+    # m.add_regressor('r0')
+    data = train_df.copy()
+    data['cap'] = 100  # Максимальная емкость
+    m.fit(data)
+    # Предсказываем 1 день
+    future = m.make_future_dataframe(periods=predictions)  # prediction = 96 частей по 15 минут
+    # добавляем регрессор
+    # future = future.merge(df_r0, on='ds')
+    future['cap'] = 100  # Установка максимальной емкости для будущих значений
+    forecast = m.predict(future)
+    # Смотрим на фактические ошибки модели
+
+    cmp_df = forecast.set_index('ds')[['yhat', 'yhat_lower', 'yhat_upper']].join(DATA.set_index('ds'))
+    cmp_df['e'] = cmp_df['y'] - cmp_df['yhat']
+    cmp_df['p'] = 100 * cmp_df['e'] / cmp_df['y']
+    print('MAPE (средняя абсолютная ошибка в процентах) – ', np.mean(abs(cmp_df[-predictions:]['p'])), '%')
+    print('MAE (средняя абсолютная ошибка) – ', np.mean(abs(cmp_df[-predictions:]['e'])))
+    # преобразуем обратно данные и округлим полученные значения
+    forecast['yhat'] = round(inv_boxcox(forecast['yhat'], lmbd))
+    forecast['yhat_upper'] = round(inv_boxcox(forecast['yhat_upper'], lmbd))
+    forecast['yhat_lower'] = round(inv_boxcox(forecast['yhat_lower'], lmbd))
+    forecast['trend'] = round(inv_boxcox(forecast['trend'], lmbd))
+    # Рисуем график с границами прогноза
+    from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+    import plotly.graph_objs as go
+
+    # init_notebook_mode(connected=True)
+
+    iplot([
+        go.Scatter(x=april_may_data['ds'], y=april_may_data['y'], name='fact'),
+        go.Scatter(x=forecast['ds'], y=forecast['yhat'], name='prediction'),
+        go.Scatter(x=forecast['ds'], y=forecast['yhat_upper'], fill='tonexty', mode='none', name='upper'),
+        go.Scatter(x=forecast['ds'], y=forecast['yhat_lower'], fill='tonexty', mode='none', name='lower'),
+        go.Scatter(x=forecast['ds'], y=forecast['trend'], name='trend')
+    ])
+
+    # Выгружаем прогноз в эксельку. Спрогнозированное значение лежит в столбце yhat
+    forecast.to_excel('./app_forecast.xlsx', sheet_name='Data', index=False)
