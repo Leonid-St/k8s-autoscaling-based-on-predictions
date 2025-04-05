@@ -24,6 +24,20 @@ MODEL_PATH = '/app/models/'
 
 app = Flask(__name__)
 
+
+# Определите путь к вашему Swagger JSON
+SWAGGER_URL = '/swagger'
+API_URL = '/static/swagger.json'  # Путь к вашему swagger.json
+
+# Настройка Swagger UI
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "Autoscaler Predictor Model API"
+    }
+)
+
 # Global variable to store the model
 cpu_model = None
 memory_model = None
