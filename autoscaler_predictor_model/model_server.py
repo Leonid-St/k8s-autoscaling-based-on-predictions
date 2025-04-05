@@ -17,12 +17,20 @@ from models.sarima import SARIMAModel
 from utils.cluster_metrics import NodeMetrics
 from utils.metrics_comparator import MetricsComparator
 from utils.metrics_storage import MetricsStorage
-from flask import Flask
-from flask_swagger_ui import get_swaggerui_blueprint
+
+
+from fastapi import FastAPI, File, UploadFile, Query, HTTPException
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from datetime import datetime
+import pandas as pd
+from io import StringIO
+from typing import Optional
+
+app = FastAPI()
 
 MODEL_PATH = '/app/models/'
 
-app = Flask(__name__)
 
 # Global variable to store the model
 cpu_model = None
@@ -159,7 +167,7 @@ def add_time_features(df):
 
 
 @handle_exceptions
-@app.route('/fit/<model_type>', methods=['POST'])
+@app.post('/fit/<model_type>')
 def fit_model(model_type):
     try:
         df = process_uploaded_file(request)
@@ -181,7 +189,7 @@ def fit_model(model_type):
         return jsonify({'error': str(e)}), 400
 
 
-@app.route('/predict/<model_type>', methods=['GET'])
+@app.get("/predict/<model_type>")
 @handle_exceptions
 def predict(model_type):
     try:
@@ -211,7 +219,7 @@ def predict(model_type):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/forecast', methods=['POST'])
+@app.post('/forecast')
 def forecast():
     # Check if the request contains JSON data
     if request.is_json:
@@ -260,7 +268,7 @@ def forecast():
     return jsonify(prediction)
 
 
-@app.route('/metrics/<model_type>')
+@app.get('/metrics/<model_type>')
 def metrics(model_type):
     try:
         # Получаем прогноз от выбранной модели
@@ -287,7 +295,7 @@ def metrics(model_type):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/metrics/<model_type>/cpu')
+@app.get('/metrics/<model_type>/cpu')
 def metrics_cpu(model_type):
     try:
         prediction = models[model_type].predict(pd.Timestamp.now())
@@ -304,7 +312,7 @@ def metrics_cpu(model_type):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/metrics/<model_type>/memory')
+@app.get('/metrics/<model_type>/memory')
 def metrics_memory(model_type):
     try:
         prediction = models[model_type].predict(pd.Timestamp.now())
@@ -338,14 +346,14 @@ def metrics_memory(model_type):
 
 
 # Добавьте новый endpoint для получения сравнения
-@app.route('/metrics/comparison', methods=['GET'])
+@app.get('/metrics/comparison')
 def get_comparison():
     node = request.args.get('node')
     comparison = metrics_comparator.get_comparison(node)
     return jsonify(comparison.to_dict(orient='records'))
 
 
-@app.route('/metrics/errors', methods=['GET'])
+@app.get('/metrics/errors')
 def get_errors():
     try:
         start_date = pd.to_datetime(request.args.get('start_date'))
@@ -358,7 +366,7 @@ def get_errors():
 
 
 # Добавляем новый endpoint для анализа точности
-@app.route('/metrics/accuracy', methods=['GET'])
+@app.get('/metrics/accuracy')
 def get_accuracy():
     try:
         start_date = pd.to_datetime(request.args.get('start_date'))
@@ -371,7 +379,7 @@ def get_accuracy():
 
 
 # Endpoint для получения последнего предсказания
-@app.route('/predict/latest', methods=['GET'])
+@app.get('/predict/latest')
 def get_latest_prediction():
     try:
         if not os.path.exists(PREDICTION_FILE):
