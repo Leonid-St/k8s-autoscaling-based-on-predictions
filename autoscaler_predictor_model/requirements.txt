@@ -50,3 +50,4 @@ holidays
 prophet
 fastapi
 pydantic
+uvicorn
