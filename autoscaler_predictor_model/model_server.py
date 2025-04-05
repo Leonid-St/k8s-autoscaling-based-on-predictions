@@ -1,9 +1,7 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 from io import StringIO
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import make_pipeline
+
 from sklearn.exceptions import NotFittedError
 from datetime import timedelta, datetime
 from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -244,11 +242,11 @@ def forecast():
     prediction = {}
 
     # SARIMA models for each type of data
-    if 'cpu' in df.columns and 'memory' in df.columns:
+    if 'cpu' in df.columns:
         cpu_model = SARIMAX(df['cpu'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
         cpu_results = cpu_model.fit()
         prediction['cpu'] = cpu_results.forecast(steps=1)[0]
-
+    if 'memory' in df.columns:
         memory_model = SARIMAX(df['memory'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
         memory_results = memory_model.fit()
         prediction['memory'] = memory_results.forecast(steps=1)[0]
