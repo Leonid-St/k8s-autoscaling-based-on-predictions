@@ -27,6 +27,11 @@ import pandas as pd
 from io import StringIO
 from typing import Optional
 
+from config import EnvConfig
+from storage.storage_factory import StorageFactory
+from services.prediction_service import PredictionService
+from services.error_calculation_service import ErrorCalculationService
+
 app = FastAPI()
 
 MODEL_PATH = '/app/models/'
@@ -42,7 +47,12 @@ historical_data = pd.DataFrame()
 DATA_RETENTION = timedelta(hours=4)  # Храним 4 часа данных
 
 # Добавляем глобальные переменные
-PREDICTION_FILE = './predictions/latest_prediction.parquet'
+PREDICTION_FILES = {
+    'polynomial': './predictions/latest_prediction_polynomial.parquet',
+    'xgboost': './predictions/latest_prediction_xgboost.parquet',
+    'sarima': './predictions/latest_prediction_sarima.parquet'
+}
+
 os.makedirs('./predictions', exist_ok=True)
 
 # Инициализация конфигурации
@@ -75,75 +85,44 @@ models = {
 metrics_comparator = MetricsComparator(data_retention='2H')  # Например, для хранения данных за последние 2 часа
 metrics_storage = MetricsStorage(storage_path='./metrics_data', retention_period=timedelta(days=365))
 
+# Инициализация конфигурации
+env_config = EnvConfig()
 
-# def update_model_from_prometheus():
-#     try:
-#         new_data = prom_collector.get_new_data()
-#         if not new_data.empty:
-#             models['xgboost'].partial_fit(new_data)
+# Инициализация хранилища
+storage = StorageFactory.create_storage({
+    'STORAGE_TYPE': os.getenv('STORAGE_TYPE'),
+    'POSTGRES_DB_NAME': os.getenv('POSTGRES_DB_NAME'),
+    'POSTGRES_USER': os.getenv('POSTGRES_USER'),
+    'POSTGRES_PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+    'POSTGRES_HOST': os.getenv('POSTGRES_HOST'),
+    'POSTGRES_PORT': os.getenv('POSTGRES_PORT'),
+    'INFLUXDB_URL': os.getenv('INFLUXDB_URL'),
+    'INFLUXDB_TOKEN': os.getenv('INFLUXDB_TOKEN'),
+    'INFLUXDB_ORG': os.getenv('INFLUXDB_ORG'),
+    'INFLUXDB_BUCKET': os.getenv('INFLUXDB_BUCKET')
+})
 
-#             # Сбор и сохранение реальных данных
-#             for _, row in new_data.iterrows():
-#                 metrics_storage.save_metrics(
-#                     timestamp=row['timestamp'],
-#                     node=row['node'],
-#                     cpu_actual=row['cpu'],
-#                     cpu_predicted=None  # Реальные данные, предсказания пока нет
-#                 )
+# Инициализация сервисов
+prediction_service = PredictionService(models['xgboost'], storage)
+error_service = ErrorCalculationService(storage)
 
-#             print(f"Model updated with {len(new_data)} new samples")
-#     except Exception as e:
-#         print(f"Error updating model: {str(e)}")
+# Задача для сбора метрик
+async def collect_metrics():
+    end_time = datetime.now()
+    start_time = end_time - timedelta(minutes=1)
+    cpu_data = await prom_collector.get_cpu_metrics(env_config.uuid_node, start_time, end_time)
+    if not cpu_data.empty:
+        metrics_storage.save_metrics(cpu_data)
 
+# Задача для обучения модели
+async def train_model():
+    await model_trainer.train_model()
 
-def update_and_predict():
-    try:
-        # 1. Сбор данных
-        new_data = prom_collector.get_new_data()
-        if new_data.empty:
-            return
-
-        # 2. Дообучение модели
-        models['xgboost'].partial_fit(new_data)
-
-        # 3. Создание предсказания
-        prediction_timestamp = datetime.now() + timedelta(minutes=5)
-        prediction = models['xgboost'].predict(prediction_timestamp)
-
-        # 4. Сохранение предсказания
-        prediction_df = pd.DataFrame({
-            'timestamp': [prediction_timestamp],
-            'cpu': [prediction['cpu']],
-            'memory': [prediction['memory']]
-        })
-        prediction_df.to_parquet(PREDICTION_FILE, index=False)
-
-        # 5. Расчет и сохранение ошибок
-        for _, row in new_data.iterrows():
-            actual_cpu = row['cpu']
-            predicted_cpu = prediction['cpu']
-
-            absolute_error = abs(actual_cpu - predicted_cpu)
-            relative_error = absolute_error / actual_cpu if actual_cpu != 0 else 0
-
-            metrics_storage.save_errors(
-                timestamp=row['timestamp'],
-                node=row['node'],
-                absolute_error=absolute_error,
-                relative_error=relative_error
-            )
-
-    except Exception as e:
-        print(f"Error in update_and_predict: {str(e)}")
-
-
-# Добавить планировщик
-scheduler = BackgroundScheduler()
-# scheduler.add_job(func=update_model_from_prometheus, trigger="interval", minutes=5)
-scheduler.add_job(func=cluster_metrics.collect_cluster_metrics, trigger="interval", minutes=2)
-scheduler.add_job(func=update_and_predict, trigger="interval", minutes=1)
+# Планировщик
+scheduler = AsyncIOScheduler()
+scheduler.add_job(collect_metrics, 'interval', minutes=1)
+scheduler.add_job(train_model, 'interval', minutes=1)
 scheduler.start()
-
 
 def handle_exceptions(f):
     def wrapper(*args, **kwargs):
@@ -166,167 +145,181 @@ def add_time_features(df):
     return df
 
 
-@handle_exceptions
-@app.post('/fit/<model_type>')
-def fit_model(model_type):
+@app.post("/fit/{model_type}")
+async def fit_model(model_type: str, file: UploadFile = File(...)):
     try:
-        df = process_uploaded_file(request)
-
+        # Обработка файла и обучение модели
+        df = process_uploaded_file(file)
+        
         if model_type == 'polynomial':
             if 'minutes_since_midnight' not in df.columns:
                 df = add_time_features(df)
             models[model_type].fit(df[['minutes_since_midnight']], df[['minutes_since_midnight']])
         elif model_type == 'xgboost':
-            models[model_type].partial_fit(df)
+            models[model_type].fit(df)
         elif model_type == 'sarima':
             models[model_type].update_data(df)
         else:
-            return jsonify({'error': 'Invalid model type'}), 400
+            raise HTTPException(status_code=400, detail="Invalid model type")
 
-        return jsonify({'status': f'{model_type} model updated'})
+        # Создаем предсказание и сохраняем его
+        prediction_timestamp = datetime.now() + timedelta(minutes=5)
+        prediction = models[model_type].predict(prediction_timestamp)
+
+        prediction_df = pd.DataFrame({
+            'timestamp': [prediction_timestamp],
+            'cpu': [prediction['cpu']],
+            'memory': [prediction.get('memory', 0)]  # Для моделей, которые не предсказывают memory
+        })
+        prediction_df.to_csv(PREDICTION_FILES[model_type], index=False)
+
+        return {"status": f"{model_type} model updated"}
 
     except KeyError as e:
-        return jsonify({'error': str(e)}), 400
-
-
-@app.get("/predict/<model_type>")
-@handle_exceptions
-def predict(model_type):
-    try:
-        timestamp_str = request.args.get('timestamp')
-        if not timestamp_str:
-            return jsonify({'error': 'Missing timestamp'}), 400
-
-        timestamp = pd.to_datetime(timestamp_str)
-        result = models[model_type].predict(timestamp)
-
-        # Сбор и сохранение предсказанных данных
-        cluster_state = cluster_metrics.get_cluster_state()
-        for node, metrics in cluster_state['nodes'].items():
-            metrics_storage.save_metrics(
-                timestamp=timestamp,
-                node=node,
-                cpu_actual=None,  # Предсказание, реальных данных пока нет
-                cpu_predicted=result['cpu']
-            )
-
-        return jsonify({
-            'model': model_type,
-            'timestamp': timestamp.isoformat(),
-            **result
-        })
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post('/forecast')
-def forecast():
-    # Check if the request contains JSON data
-    if request.is_json:
-        data = request.get_json()
-        df = pd.DataFrame(data)
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-    else:
-        # Read CSV file from the request
-        file = request.files.get('file')
-        if not file:
-            return jsonify({'error': 'No file provided'}), 400
-        # Convert file to DataFrame
-        df = pd.read_csv(StringIO(file.read().decode('utf-8')))
+# @app.get("/predict/<model_type>")
+# @handle_exceptions
+# def predict(model_type):
+#     try:
+#         timestamp_str = request.args.get('timestamp')
+#         if not timestamp_str:
+#             return jsonify({'error': 'Missing timestamp'}), 400
 
-    # Validate DataFrame format and presence of timestamp
-    if 'timestamp' not in df.columns:
-        return jsonify({'error': 'CSV/JSON must contain timestamp column'}), 400
+#         timestamp = pd.to_datetime(timestamp_str)
+#         result = models[model_type].predict(timestamp)
 
-    # Convert timestamps to DateTime and sort
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df.set_index('timestamp', inplace=True)
-    df.sort_index(inplace=True)
+#         # Сбор и сохранение предсказанных данных
+#         cluster_state = cluster_metrics.get_cluster_state()
+#         for node, metrics in cluster_state['nodes'].items():
+#             metrics_storage.save_metrics(
+#                 timestamp=timestamp,
+#                 node=node,
+#                 cpu_actual=None,
+#                 cpu_predicted=result['cpu'],
+#                 model_type=model_type  # Указываем тип модели
+#             )
 
-    # Predict for the next 15 minutes
-    last_timestamp = df.index[-1]
-    next_timestamp = last_timestamp + timedelta(minutes=15)
-
-    prediction = {}
-
-    # SARIMA models for each type of data
-    if 'cpu' in df.columns:
-        cpu_model = SARIMAX(df['cpu'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-        cpu_results = cpu_model.fit()
-        prediction['cpu'] = cpu_results.forecast(steps=1)[0]
-    if 'memory' in df.columns:
-        memory_model = SARIMAX(df['memory'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-        memory_results = memory_model.fit()
-        prediction['memory'] = memory_results.forecast(steps=1)[0]
-
-    if 'requests' in df.columns:
-        requests_model = SARIMAX(df['requests'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
-        requests_results = requests_model.fit()
-        prediction['requests'] = requests_results.forecast(steps=1)[0]
-
-    prediction['timestamp'] = next_timestamp.strftime('%Y-%m-%d %H:%M:%S')
-    return jsonify(prediction)
+#         return jsonify({
+#             'model': model_type,
+#             'timestamp': timestamp.isoformat(),
+#             **result
+#         })
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
 
 
-@app.get('/metrics/<model_type>')
-def metrics(model_type):
-    try:
-        # Получаем прогноз от выбранной модели
-        prediction = models[model_type].predict(pd.Timestamp.now())
+# @app.post('/forecast')
+# def forecast():
+#     # Check if the request contains JSON data
+#     if request.is_json:
+#         data = request.get_json()
+#         df = pd.DataFrame(data)
+#         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+#     else:
+#         # Read CSV file from the request
+#         file = request.files.get('file')
+#         if not file:
+#             return jsonify({'error': 'No file provided'}), 400
+#         # Convert file to DataFrame
+#         df = pd.read_csv(StringIO(file.read().decode('utf-8')))
 
-        # Получаем максимальные значения из конфига
-        max_cpu = float(config.get('DEFAULT', 'MaxCpu'))
-        max_mem = float(config.get('DEFAULT', 'MaxMem'))
+#     # Validate DataFrame format and presence of timestamp
+#     if 'timestamp' not in df.columns:
+#         return jsonify({'error': 'CSV/JSON must contain timestamp column'}), 400
 
-        # Вычисляем комбинированную метрику
-        combined_metric = max(
-            prediction['cpu'] / max_cpu * 100,
-            prediction['memory'] / max_mem * 100
-        )
+#     # Convert timestamps to DateTime and sort
+#     df['timestamp'] = pd.to_datetime(df['timestamp'])
+#     df.set_index('timestamp', inplace=True)
+#     df.sort_index(inplace=True)
 
-        return jsonify({
-            'value': round(combined_metric, 2),
-            'timestamp': pd.Timestamp.now().isoformat()
-        })
+#     # Predict for the next 15 minutes
+#     last_timestamp = df.index[-1]
+#     next_timestamp = last_timestamp + timedelta(minutes=15)
 
-    except KeyError:
-        return jsonify({'error': 'Invalid model type'}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+#     prediction = {}
+
+#     # SARIMA models for each type of data
+#     if 'cpu' in df.columns:
+#         cpu_model = SARIMAX(df['cpu'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+#         cpu_results = cpu_model.fit()
+#         prediction['cpu'] = cpu_results.forecast(steps=1)[0]
+#     if 'memory' in df.columns:
+#         memory_model = SARIMAX(df['memory'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+#         memory_results = memory_model.fit()
+#         prediction['memory'] = memory_results.forecast(steps=1)[0]
+
+#     if 'requests' in df.columns:
+#         requests_model = SARIMAX(df['requests'], order=(1, 1, 1), seasonal_order=(1, 1, 1, 4))
+#         requests_results = requests_model.fit()
+#         prediction['requests'] = requests_results.forecast(steps=1)[0]
+
+#     prediction['timestamp'] = next_timestamp.strftime('%Y-%m-%d %H:%M:%S')
+#     return jsonify(prediction)
 
 
-@app.get('/metrics/<model_type>/cpu')
-def metrics_cpu(model_type):
+# @app.get('/metrics/<model_type>')
+# def metrics(model_type):
+#     try:
+#         # Получаем прогноз от выбранной модели
+#         prediction = models[model_type].predict(pd.Timestamp.now())
+
+#         # Получаем максимальные значения из конфига
+#         max_cpu = float(config.get('DEFAULT', 'MaxCpu'))
+#         max_mem = float(config.get('DEFAULT', 'MaxMem'))
+
+#         # Вычисляем комбинированную метрику
+#         combined_metric = max(
+#             prediction['cpu'] / max_cpu * 100,
+#             prediction['memory'] / max_mem * 100
+#         )
+
+#         return jsonify({
+#             'value': round(combined_metric, 2),
+#             'timestamp': pd.Timestamp.now().isoformat()
+#         })
+
+#     except KeyError:
+#         return jsonify({'error': 'Invalid model type'}), 400
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
+
+@app.get('/metrics/{model_type}/cpu')
+async def metrics_cpu(model_type: str):
     try:
         prediction = models[model_type].predict(pd.Timestamp.now())
         max_cpu = float(config.get('DEFAULT', 'MaxCpu'))
         cpu_metric = prediction['cpu'] / max_cpu * 100
 
-        return jsonify({
+        return JSONResponse({
             'value': round(cpu_metric, 2),
             'timestamp': pd.Timestamp.now().isoformat()
         })
     except KeyError:
-        return jsonify({'error': 'Invalid model type'}), 400
+        raise HTTPException(status_code=400, detail='Invalid model type')
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get('/metrics/<model_type>/memory')
-def metrics_memory(model_type):
+@app.get('/metrics/{model_type}/memory')
+async def metrics_memory(model_type: str):
     try:
         prediction = models[model_type].predict(pd.Timestamp.now())
         max_mem = float(config.get('DEFAULT', 'MaxMem'))
         mem_metric = prediction['memory'] / max_mem * 100
 
-        return jsonify({
+        return JSONResponse({
             'value': round(mem_metric, 2),
             'timestamp': pd.Timestamp.now().isoformat()
         })
     except KeyError:
-        return jsonify({'error': 'Invalid model type'}), 400
+        raise HTTPException(status_code=400, detail='Invalid model type')
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # def scaling_decision(current_cpu_usage):
@@ -345,54 +338,100 @@ def metrics_memory(model_type):
 #     return current_nodes
 
 
-# Добавьте новый endpoint для получения сравнения
-@app.get('/metrics/comparison')
-def get_comparison():
-    node = request.args.get('node')
-    comparison = metrics_comparator.get_comparison(node)
-    return jsonify(comparison.to_dict(orient='records'))
+# # Добавьте новый endpoint для получения сравнения
+# @app.get('/metrics/comparison')
+# def get_comparison():
+#     node = request.args.get('node')
+#     comparison = metrics_comparator.get_comparison(node)
+#     return jsonify(comparison.to_dict(orient='records'))
 
 
-@app.get('/metrics/errors')
-def get_errors():
-    try:
-        start_date = pd.to_datetime(request.args.get('start_date'))
-        end_date = pd.to_datetime(request.args.get('end_date'))
+# @app.get('/metrics/errors')
+# def get_errors():
+#     try:
+#         start_date = pd.to_datetime(request.args.get('start_date'))
+#         end_date = pd.to_datetime(request.args.get('end_date'))
 
-        errors = metrics_storage.get_errors(start_date, end_date)
-        return jsonify(errors.to_dict(orient='records'))
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+#         errors = metrics_storage.get_errors(start_date, end_date)
+#         return jsonify(errors.to_dict(orient='records'))
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
 
 
 # Добавляем новый endpoint для анализа точности
-@app.get('/metrics/accuracy')
-def get_accuracy():
+@app.get('/metrics/accuracy/{model_type}')
+def get_accuracy(
+    model_type: str, 
+    start_date: str = Query(..., description="Start date in YYYY-MM-DD format"),
+    end_date: str = Query(..., description="End date in YYYY-MM-DD format")
+):
     try:
-        start_date = pd.to_datetime(request.args.get('start_date'))
-        end_date = pd.to_datetime(request.args.get('end_date'))
+        if model_type not in models:
+            return JSONResponse(
+                content={'error': f'Invalid model type: {model_type}'},
+                status_code=400
+            )
 
-        accuracy_data = metrics_storage.calculate_accuracy_over_time(start_date, end_date)
-        return jsonify(accuracy_data.to_dict(orient='records'))
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+
+        accuracy_data = metrics_storage.calculate_accuracy_over_time(start_date, end_date, model_type)
+        if accuracy_data.empty:
+            return JSONResponse(
+                content={'error': f'No accuracy data available for {model_type} in the specified period'},
+                status_code=404
+            )
+
+        return JSONResponse(content=accuracy_data.to_dict(orient='records'))
+    except ValueError as e:
+        return JSONResponse(content={'error': str(e)}, status_code=400)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return JSONResponse(content={'error': str(e)}, status_code=500)
 
 
 # Endpoint для получения последнего предсказания
-@app.get('/predict/latest')
-def get_latest_prediction():
+@app.get('/predict/latest/{model_type}')
+def get_latest_prediction(model_type: str):
     try:
-        if not os.path.exists(PREDICTION_FILE):
-            return jsonify({'error': 'No predictions available'}), 404
+        if model_type not in PREDICTION_FILES:
+            return JSONResponse(
+                content={'error': f'Invalid model type: {model_type}'},
+                status_code=400
+            )
 
-        prediction = pd.read_parquet(PREDICTION_FILE).iloc[-1].to_dict()
-        return jsonify({
-            'timestamp': prediction['timestamp'].isoformat(),
-            'cpu': prediction['cpu'],
-            'memory': prediction['memory']
-        })
+        prediction_file = PREDICTION_FILES[model_type]
+        if not os.path.exists(prediction_file):
+            return JSONResponse(
+                content={'error': f'No predictions available for {model_type}. Model may not have been trained yet.'}, 
+                status_code=404
+            )
+
+        prediction = pd.read_csv(prediction_file)
+        prediction['timestamp'] = pd.to_datetime(prediction['timestamp'])  # Преобразуем в datetime
+        latest_prediction = prediction.iloc[-1].to_dict()
+        latest_prediction['timestamp'] = latest_prediction['timestamp'].isoformat()  # Преобразуем в строку
+
+        return JSONResponse(content=latest_prediction)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+
+# Пример использования
+async def collect_and_predict():
+    # Сбор данных
+    end_time = datetime.now()
+    start_time = end_time - timedelta(minutes=1)
+    cpu_data = await prom_collector.get_cpu_metrics(env_config.uuid_node, start_time, end_time)
+    
+    if not cpu_data.empty:
+        # Сохранение реальных данных
+        storage.save_actual(end_time, env_config.uuid_node, {'cpu': cpu_data['value'].mean()})
+        
+        # Создание предсказания
+        prediction = prediction_service.make_prediction(end_time, env_config.uuid_node)
+        
+        # Расчет ошибок
+        error_service.calculate_errors(start_time, end_time, env_config.uuid_node, 'xgboost')
 
 
 if __name__ == "__main__":

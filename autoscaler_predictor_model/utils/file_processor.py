@@ -4,36 +4,34 @@ from flask import abort
 from exceptions import DataValidationError
 
 
-def process_uploaded_file(request):
+def process_uploaded_file(file):
     try:
-        file = request.files.get('file')
         if not file or file.filename == '':
             raise DataValidationError("No file uploaded")
 
-        if file.content_length > 1024 * 1024:  # Ограничение 1MB
-            raise DataValidationError("File size exceeds 1MB limit")
+        # if file.content_length > 1024 * 1024:  # Ограничение 1MB
+        #     raise DataValidationError("File size exceeds 1MB limit")
 
-    except Exception as e:
-        raise DataValidationError(str(e))
+        file_type = file.filename.split('.')[-1].lower()
 
-    file_type = file.filename.split('.')[-1].lower()
-
-    try:
+        content = file.file.read().decode('utf-8')
+        
         if file_type == 'csv':
-            df = pd.read_csv(StringIO(file.read().decode('utf-8')))
+            df = pd.read_csv(StringIO(content))
         elif file_type == 'json':
-            df = pd.read_json(StringIO(file.read().decode('utf-8')))
+            df = pd.read_json(StringIO(content))
             if 'timestamp' in df.columns:
                 df['timestamp'] = pd.to_datetime(df['timestamp'], infer_datetime_format=True)
         else:
-            abort(400, 'Unsupported file type')
+            raise DataValidationError('Unsupported file type')
+
+        if 'timestamp' not in df.columns:
+            raise DataValidationError('File must contain timestamp column')
+
+        return add_time_features(df)
+
     except Exception as e:
-        abort(400, f'Error reading file: {str(e)}')
-
-    if 'timestamp' not in df.columns:
-        abort(400, 'File must contain timestamp column')
-
-    return add_time_features(df)
+        raise DataValidationError(str(e))
 
 
 def add_time_features(df):

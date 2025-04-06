@@ -28,7 +28,7 @@ class XGBoostModel:
         self._cpu_fitted = False
         self._memory_fitted = False
 
-    def partial_fit(self, df):
+    def fit(self, df):
         if df.empty:
             raise ValueError("Empty training data")
 

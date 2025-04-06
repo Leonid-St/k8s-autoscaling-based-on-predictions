@@ -15,7 +15,6 @@ export CPPFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix readline)/
 export PKG_CONFIG_PATH="$(brew --prefix openssl)/lib/pkgconfig:$(brew --prefix readline)/lib/pkgconfig:$(brew --prefix zlib)/lib/pkgconfig"
 ```
 
-
 ```bash
 brew update
 brew upgrade
@@ -26,14 +25,11 @@ pyenv local 3.9.7
 
 ```bash
 # Для bash
-echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bash_profile
-echo 'eval "$(pyenv init --path)"' >> ~/.bash_profile
-echo 'eval "$(pyenv init -)"' >> ~/.bash_profile
+export PYENV_ROOT="$HOME/.pyenv"
 
-# Для zsh
-echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.zshrc
-echo 'eval "$(pyenv init --path)"' >> ~/.zshrc
-echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+
+eval "$(pyenv init - bash)"
 ```
 
 env package :
@@ -46,8 +42,8 @@ rm -rf autoscaler_predictor_model/venv
 ```
 
 ```bash
-python3 -m venv autoscaler_predictor_model/venv
-source autoscaler_predictor_model/venv/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -69,47 +65,17 @@ The json file name is in the format: `<type>-<year>-<month>-<day>-<hour>-<minute
 
 ## How to use the model server
 ### Build and Run the Docker image
-#### for ubunbtu minikube
 ```bash
-sudo apt update
-sudo apt upgrade
-sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-sudo apt update
-sudo apt install -y docker-ce
-sudo systemctl start docker
-sudo systemctl enable docker
-curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-sudo install minikube-linux-amd64 /usr/local/bin/minikube
-sudo usermod -aG docker $USER
-newgrp docker
-docker ps
-minikube start --driver=docker
-minikube status
-sudo apt update
-curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-
-chmod +x ./kubectl
-
-
-sudo mv ./kubectl /usr/local/bin/kubectl
-
-kubectl version --client
-
-kubectl get pods -A
-
-
-```
-
-```bash
-
 podman machine init
 export DOCKER_HOST='unix:///var/folders/2v/7rm59ty53ld26_byy1x3z1g80000gn/T/podman/podman-machine-default-api.sock'
 
 podman machine start
 podman build -t autoscaler-prediction-model-server .
 podman run -p 5001:5001 autoscaler-prediction-model-server
+```
+
+```bash
+uvicorn main:app --reload
 ```
 
 ### Usage Instructions:
@@ -261,3 +227,30 @@ spec:
 
 ```
 
+
+### Install InfluxDB on ubuntu 24.04
+
+https://docs.influxdata.com/influxdb/v2/install/?t=Linux#choose-the-influxdata-key-pair-for-your-os-version
+
+```bash
+curl --location -O \
+https://download.influxdata.com/influxdb/releases/influxdb2-2.7.11_linux_amd64.tar.gz
+
+tar xvzf ./influxdb2-2.7.11_linux_amd64.tar.gz
+
+sudo cp ./influxdb2-2.7.11/usr/bin/influxd /usr/local/bin/
+
+
+./influxdb2-2.7.11/usr/bin/influxd
+
+#Recommended 
+chmod 0750 ~/.influxdbv2
+
+
+```
+
+
+#### Start InfluxDB
+```bash
+influxd http-bind-address=:8086 reporting-disabled=false
+```
