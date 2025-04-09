@@ -254,3 +254,93 @@ chmod 0750 ~/.influxdbv2
 ```bash
 influxd http-bind-address=:8086 reporting-disabled=false
 ```
+
+
+### Install the latest PostgreSQL packages with TimeScaleDB
+
+```bash
+sudo apt install gnupg postgresql-common apt-transport-https lsb-release wget
+```
+Run the PostgreSQL package setup script
+```bash
+sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+```
+If you want to do some development on PostgreSQL, add the libraries:
+```bash
+sudo apt install postgresql-server-dev-17
+```
+Add the TimescaleDB package
+
+
+Ubuntu
+```bash
+echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -c -s) main" | sudo tee /etc/apt/sources.list.d/timescaledb.list
+```
+Install the TimescaleDB GPG key
+```bash
+wget --quiet -O - https://packagecloud.io/timescale/timescaledb/gpgkey | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg
+```
+
+
+Update your local repository list
+```bash
+sudo apt update
+```
+Install TimescaleDB
+```bash
+sudo apt install timescaledb-2-postgresql-17 postgresql-client-17
+```
+To install a specific TimescaleDB release, set the version. For example:
+```bash
+sudo apt-get install timescaledb-2-postgresql-14='2.6.0*' timescaledb-2-loader-postgresql-14='2.6.0*'
+```
+Older versions of TimescaleDB may not support all the OS versions listed on this page.
+
+Tune your PostgreSQL instance for TimescaleDB
+```bash
+sudo timescaledb-tune
+```
+This script is included with the timescaledb-tools package when you install TimescaleDB. For more information, see configuration.
+
+Restart PostgreSQL
+```bash
+sudo systemctl restart postgresql
+```
+Login to PostgreSQL as postgres
+```bash
+sudo -u postgres psql
+```
+You are in the psql shell.
+
+Set the password for postgres
+```bash
+\password postgres
+```
+When you have set the password, type \q to exit psql.
+
+#### Add the TimescaleDB extension to your database
+
+
+Connect to a database on your PostgreSQL instance
+
+In PostgreSQL, the default user and database are both postgres. To use a different database, set <database-name> to the name of that database:
+```bash
+psql -d "postgres://<username>:<password>@<host>:<port>/<database-name>"
+```
+Add TimescaleDB to the database
+```bash
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+```
+Check that TimescaleDB is installed
+```bash
+\dx
+```
+You see the list of installed extensions:
+```bash
+List of installed extensions
+Name     | Version |   Schema   |                                      Description                                      
+-------------+---------+------------+---------------------------------------------------------------------------------------
+plpgsql     | 1.0     | pg_catalog | PL/pgSQL procedural language
+timescaledb | 2.17.2  | public     | Enables scalable inserts and complex queries for time-series data (Community Edition)
+```
+Press q to exit the list of extensions.

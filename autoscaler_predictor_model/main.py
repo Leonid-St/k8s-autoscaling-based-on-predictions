@@ -1,184 +1,87 @@
-from flask import Flask, request, jsonify
-import pandas as pd
-from io import StringIO
-
-from sklearn.exceptions import NotFittedError
-from datetime import timedelta, datetime
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-from configparser import ConfigParser
-from apscheduler.schedulers.background import BackgroundScheduler
-from prometheus_client import PrometheusDataCollector
-import os
-
-from utils.file_processor import process_uploaded_file
-from models.polynomial import PolynomialModel
-from models.xgboost import XGBoostModel
-from models.sarima import SARIMAModel
-from utils.cluster_metrics import NodeMetrics
-from utils.metrics_comparator import MetricsComparator
-from utils.metrics_storage import MetricsStorage
-
-
-from fastapi import FastAPI, File, UploadFile, Query, HTTPException
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from datetime import datetime
-import pandas as pd
-from io import StringIO
-from typing import Optional
+import json
+import requests
+from datetime import datetime, timedelta
+import warnings
+from urllib3.exceptions import NotOpenSSLWarning
 
 from config import EnvConfig
 from storage.storage_factory import StorageFactory
-from services.prediction_service import PredictionService
-from services.error_calculation_service import ErrorCalculationService
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-app = FastAPI()
+# app = FastAPI()
 
-MODEL_PATH = '/app/models/'
-
-
-# Global variable to store the model
-cpu_model = None
-memory_model = None
-requests_model = None
-
-# Добавить глобальные переменные
-historical_data = pd.DataFrame()
-DATA_RETENTION = timedelta(hours=4)  # Храним 4 часа данных
-
-# Добавляем глобальные переменные
-PREDICTION_FILES = {
-    'polynomial': './predictions/latest_prediction_polynomial.parquet',
-    'xgboost': './predictions/latest_prediction_xgboost.parquet',
-    'sarima': './predictions/latest_prediction_sarima.parquet'
-}
-
-os.makedirs('./predictions', exist_ok=True)
-
-# Инициализация конфигурации
-config = ConfigParser()
-config.read('config.ini')
-
-# CPU: container_cpu_usage_seconds_total
-# Memory: container_memory_working_set_bytes
-# Для автоскейлинга приложений: http_requests_total
-
-# Добавить в конфиг
-PROMETHEUS_URL = config.get('PROMETHEUS', 'Url')
-CPU_QUERY = config.get('PROMETHEUS', 'CpuQuery')
-MEMORY_QUERY = config.get('PROMETHEUS', 'MemoryQuery')
-
-# Инициализация коллектора
-prom_collector = PrometheusDataCollector(PROMETHEUS_URL, CPU_QUERY, MEMORY_QUERY)
-
-# Инициализация метрик кластера
-cluster_metrics = NodeMetrics(PROMETHEUS_URL)
-
-# Инициализация моделей
-models = {
-    'polynomial': PolynomialModel(),
-    'xgboost': XGBoostModel(cluster_metrics),
-    'sarima': SARIMAModel(data_retention='4H')
-}
-
-# Инициализация после других глобальных переменных
-metrics_comparator = MetricsComparator(data_retention='2H')  # Например, для хранения данных за последние 2 часа
-metrics_storage = MetricsStorage(storage_path='./metrics_data', retention_period=timedelta(days=365))
-
-# Инициализация конфигурации
-env_config = EnvConfig()
-
-# Инициализация хранилища
-storage = StorageFactory.create_storage({
-    'STORAGE_TYPE': os.getenv('STORAGE_TYPE'),
-    'POSTGRES_DB_NAME': os.getenv('POSTGRES_DB_NAME'),
-    'POSTGRES_USER': os.getenv('POSTGRES_USER'),
-    'POSTGRES_PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-    'POSTGRES_HOST': os.getenv('POSTGRES_HOST'),
-    'POSTGRES_PORT': os.getenv('POSTGRES_PORT'),
-    'INFLUXDB_URL': os.getenv('INFLUXDB_URL'),
-    'INFLUXDB_TOKEN': os.getenv('INFLUXDB_TOKEN'),
-    'INFLUXDB_ORG': os.getenv('INFLUXDB_ORG'),
-    'INFLUXDB_BUCKET': os.getenv('INFLUXDB_BUCKET')
-})
-
-# Инициализация сервисов
-prediction_service = PredictionService(models['xgboost'], storage)
-error_service = ErrorCalculationService(storage)
-
-# Задача для сбора метрик
-async def collect_metrics():
-    end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=1)
-    cpu_data = await prom_collector.get_cpu_metrics(env_config.uuid_node, start_time, end_time)
-    if not cpu_data.empty:
-        metrics_storage.save_metrics(cpu_data)
-
-# Задача для обучения модели
-async def train_model():
-    await model_trainer.train_model()
-
-# Планировщик
-scheduler = AsyncIOScheduler()
-scheduler.add_job(collect_metrics, 'interval', minutes=1)
-scheduler.add_job(train_model, 'interval', minutes=1)
-scheduler.start()
-
-def handle_exceptions(f):
-    def wrapper(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except ValueError as e:
-            return jsonify({'error': str(e)}), 400
-        except NotFittedError as e:
-            return jsonify({'error': f'Model not trained: {str(e)}'}), 412
-        except Exception as e:
-            return jsonify({'error': f'Internal server error: {str(e)}'}), 500
-
-    wrapper.__name__ = f.__name__
-    return wrapper
+# MODEL_PATH = '/app/models/'
 
 
-def add_time_features(df):
-    df = df.copy()
-    df['minutes_since_midnight'] = df['timestamp'].dt.hour * 60 + df['timestamp'].dt.minute
-    return df
+# # Global variable to store the model
+# cpu_model = None
+# memory_model = None
+# requests_model = None
+
+# # Добавить глобальные переменные
+# historical_data = pd.DataFrame()
+# DATA_RETENTION = timedelta(hours=4)  # Храним 4 часа данных
+
+# # Добавляем глобальные переменные
+# PREDICTION_FILES = {
+#     'polynomial': './predictions/latest_prediction_polynomial.parquet',
+#     'xgboost': './predictions/latest_prediction_xgboost.parquet',
+#     'sarima': './predictions/latest_prediction_sarima.parquet'
+# }
+
+# os.makedirs('./predictions', exist_ok=True)
 
 
-@app.post("/fit/{model_type}")
-async def fit_model(model_type: str, file: UploadFile = File(...)):
-    try:
-        # Обработка файла и обучение модели
-        df = process_uploaded_file(file)
+
+# # Задача для сбора метрик
+# async def collect_metrics():
+#     end_time = datetime.now()
+#     start_time = end_time - timedelta(minutes=1)
+#     cpu_data = await prom_collector.get_cpu_metrics(env_config.uuid_node, start_time, end_time)
+#     if not cpu_data.empty:
+#         metrics_storage.save_metrics(cpu_data)
+
+
+# def add_time_features(df):
+#     df = df.copy()
+#     df['minutes_since_midnight'] = df['timestamp'].dt.hour * 60 + df['timestamp'].dt.minute
+#     return df
+
+
+# @app.post("/fit/{model_type}")
+# async def fit_model(model_type: str, file: UploadFile = File(...)):
+#     try:
+#         # Обработка файла и обучение модели
+#         df = process_uploaded_file(file)
         
-        if model_type == 'polynomial':
-            if 'minutes_since_midnight' not in df.columns:
-                df = add_time_features(df)
-            models[model_type].fit(df[['minutes_since_midnight']], df[['minutes_since_midnight']])
-        elif model_type == 'xgboost':
-            models[model_type].fit(df)
-        elif model_type == 'sarima':
-            models[model_type].update_data(df)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid model type")
+#         if model_type == 'polynomial':
+#             if 'minutes_since_midnight' not in df.columns:
+#                 df = add_time_features(df)
+#             models[model_type].fit(df[['minutes_since_midnight']], df[['minutes_since_midnight']])
+#         elif model_type == 'xgboost':
+#             models[model_type].fit(df)
+#         elif model_type == 'sarima':
+#             models[model_type].update_data(df)
+#         else:
+#             raise HTTPException(status_code=400, detail="Invalid model type")
 
-        # Создаем предсказание и сохраняем его
-        prediction_timestamp = datetime.now() + timedelta(minutes=5)
-        prediction = models[model_type].predict(prediction_timestamp)
+#         # Создаем предсказание и сохраняем его
+#         prediction_timestamp = datetime.now() + timedelta(minutes=5)
+#         prediction = models[model_type].predict(prediction_timestamp)
 
-        prediction_df = pd.DataFrame({
-            'timestamp': [prediction_timestamp],
-            'cpu': [prediction['cpu']],
-            'memory': [prediction.get('memory', 0)]  # Для моделей, которые не предсказывают memory
-        })
-        prediction_df.to_csv(PREDICTION_FILES[model_type], index=False)
+#         prediction_df = pd.DataFrame({
+#             'timestamp': [prediction_timestamp],
+#             'cpu': [prediction['cpu']],
+#             'memory': [prediction.get('memory', 0)]  # Для моделей, которые не предсказывают memory
+#         })
+#         prediction_df.to_csv(PREDICTION_FILES[model_type], index=False)
 
-        return {"status": f"{model_type} model updated"}
+#         return {"status": f"{model_type} model updated"}
 
-    except KeyError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#     except KeyError as e:
+#         raise HTTPException(status_code=400, detail=str(e))
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 # @app.get("/predict/<model_type>")
@@ -288,151 +191,244 @@ async def fit_model(model_type: str, file: UploadFile = File(...)):
 #         return jsonify({'error': str(e)}), 500
 
 
-@app.get('/metrics/{model_type}/cpu')
-async def metrics_cpu(model_type: str):
-    try:
-        prediction = models[model_type].predict(pd.Timestamp.now())
-        max_cpu = float(config.get('DEFAULT', 'MaxCpu'))
-        cpu_metric = prediction['cpu'] / max_cpu * 100
-
-        return JSONResponse({
-            'value': round(cpu_metric, 2),
-            'timestamp': pd.Timestamp.now().isoformat()
-        })
-    except KeyError:
-        raise HTTPException(status_code=400, detail='Invalid model type')
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get('/metrics/{model_type}/memory')
-async def metrics_memory(model_type: str):
-    try:
-        prediction = models[model_type].predict(pd.Timestamp.now())
-        max_mem = float(config.get('DEFAULT', 'MaxMem'))
-        mem_metric = prediction['memory'] / max_mem * 100
-
-        return JSONResponse({
-            'value': round(mem_metric, 2),
-            'timestamp': pd.Timestamp.now().isoformat()
-        })
-    except KeyError:
-        raise HTTPException(status_code=400, detail='Invalid model type')
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# def scaling_decision(current_cpu_usage):
-#     scale_up_threshold = config.getfloat('AUTOSCALER', 'ScaleUpThreshold')
-#     scale_down_threshold = config.getfloat('AUTOSCALER', 'ScaleDownThreshold')
-#     max_nodes = config.getint('AUTOSCALER', 'MaxNodes')
-#     min_nodes = config.getint('AUTOSCALER', 'MinNodes')
-#     scale_step = config.getint('AUTOSCALER', 'ScaleStep')
-#     # Получаем текущее количество нод
-#     current_nodes = cluster_metrics.get_cluster_state()['total_nodes']
-#     # Логика принятия решения о масштабировании
-#     if current_cpu_usage > scale_up_threshold:
-#         return min(max_nodes, current_nodes + scale_step)
-#     elif current_cpu_usage < scale_down_threshold:
-#         return max(min_nodes, current_nodes - scale_step)
-#     return current_nodes
-
-
-# # Добавьте новый endpoint для получения сравнения
-# @app.get('/metrics/comparison')
-# def get_comparison():
-#     node = request.args.get('node')
-#     comparison = metrics_comparator.get_comparison(node)
-#     return jsonify(comparison.to_dict(orient='records'))
-
-
-# @app.get('/metrics/errors')
-# def get_errors():
+# @app.get('/metrics/{model_type}/cpu')
+# async def metrics_cpu(model_type: str):
 #     try:
-#         start_date = pd.to_datetime(request.args.get('start_date'))
-#         end_date = pd.to_datetime(request.args.get('end_date'))
+#         prediction = models[model_type].predict(pd.Timestamp.now())
+#         max_cpu = float(config.get('DEFAULT', 'MaxCpu'))
+#         cpu_metric = prediction['cpu'] / max_cpu * 100
 
-#         errors = metrics_storage.get_errors(start_date, end_date)
-#         return jsonify(errors.to_dict(orient='records'))
+#         return JSONResponse({
+#             'value': round(cpu_metric, 2),
+#             'timestamp': pd.Timestamp.now().isoformat()
+#         })
+#     except KeyError:
+#         raise HTTPException(status_code=400, detail='Invalid model type')
 #     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Добавляем новый endpoint для анализа точности
-@app.get('/metrics/accuracy/{model_type}')
-def get_accuracy(
-    model_type: str, 
-    start_date: str = Query(..., description="Start date in YYYY-MM-DD format"),
-    end_date: str = Query(..., description="End date in YYYY-MM-DD format")
-):
-    try:
-        if model_type not in models:
-            return JSONResponse(
-                content={'error': f'Invalid model type: {model_type}'},
-                status_code=400
-            )
+# @app.get('/metrics/{model_type}/memory')
+# async def metrics_memory(model_type: str):
+#     try:
+#         prediction = models[model_type].predict(pd.Timestamp.now())
+#         max_mem = float(config.get('DEFAULT', 'MaxMem'))
+#         mem_metric = prediction['memory'] / max_mem * 100
 
-        start_date = pd.to_datetime(start_date)
-        end_date = pd.to_datetime(end_date)
-
-        accuracy_data = metrics_storage.calculate_accuracy_over_time(start_date, end_date, model_type)
-        if accuracy_data.empty:
-            return JSONResponse(
-                content={'error': f'No accuracy data available for {model_type} in the specified period'},
-                status_code=404
-            )
-
-        return JSONResponse(content=accuracy_data.to_dict(orient='records'))
-    except ValueError as e:
-        return JSONResponse(content={'error': str(e)}, status_code=400)
-    except Exception as e:
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+#         return JSONResponse({
+#             'value': round(mem_metric, 2),
+#             'timestamp': pd.Timestamp.now().isoformat()
+#         })
+#     except KeyError:
+#         raise HTTPException(status_code=400, detail='Invalid model type')
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Endpoint для получения последнего предсказания
-@app.get('/predict/latest/{model_type}')
-def get_latest_prediction(model_type: str):
-    try:
-        if model_type not in PREDICTION_FILES:
-            return JSONResponse(
-                content={'error': f'Invalid model type: {model_type}'},
-                status_code=400
-            )
+# # Добавляем новый endpoint для анализа точности
+# @app.get('/metrics/accuracy/{model_type}')
+# def get_accuracy(
+#     model_type: str, 
+#     start_date: str = Query(..., description="Start date in YYYY-MM-DD format"),
+#     end_date: str = Query(..., description="End date in YYYY-MM-DD format")
+# ):
+#     try:
+#         if model_type not in models:
+#             return JSONResponse(
+#                 content={'error': f'Invalid model type: {model_type}'},
+#                 status_code=400
+#             )
 
-        prediction_file = PREDICTION_FILES[model_type]
-        if not os.path.exists(prediction_file):
-            return JSONResponse(
-                content={'error': f'No predictions available for {model_type}. Model may not have been trained yet.'}, 
-                status_code=404
-            )
+#         start_date = pd.to_datetime(start_date)
+#         end_date = pd.to_datetime(end_date)
 
-        prediction = pd.read_csv(prediction_file)
-        prediction['timestamp'] = pd.to_datetime(prediction['timestamp'])  # Преобразуем в datetime
-        latest_prediction = prediction.iloc[-1].to_dict()
-        latest_prediction['timestamp'] = latest_prediction['timestamp'].isoformat()  # Преобразуем в строку
+#         accuracy_data = metrics_storage.calculate_accuracy_over_time(start_date, end_date, model_type)
+#         if accuracy_data.empty:
+#             return JSONResponse(
+#                 content={'error': f'No accuracy data available for {model_type} in the specified period'},
+#                 status_code=404
+#             )
 
-        return JSONResponse(content=latest_prediction)
-    except Exception as e:
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+#         return JSONResponse(content=accuracy_data.to_dict(orient='records'))
+#     except ValueError as e:
+#         return JSONResponse(content={'error': str(e)}, status_code=400)
+#     except Exception as e:
+#         return JSONResponse(content={'error': str(e)}, status_code=500)
 
 
-# Пример использования
-async def collect_and_predict():
-    # Сбор данных
-    end_time = datetime.now()
-    start_time = end_time - timedelta(minutes=1)
-    cpu_data = await prom_collector.get_cpu_metrics(env_config.uuid_node, start_time, end_time)
-    
-    if not cpu_data.empty:
-        # Сохранение реальных данных
-        storage.save_actual(end_time, env_config.uuid_node, {'cpu': cpu_data['value'].mean()})
-        
-        # Создание предсказания
-        prediction = prediction_service.make_prediction(end_time, env_config.uuid_node)
-        
-        # Расчет ошибок
-        error_service.calculate_errors(start_time, end_time, env_config.uuid_node, 'xgboost')
+# # Endpoint для получения последнего предсказания
+# @app.get('/predict/latest/{model_type}')
+# def get_latest_prediction(model_type: str):
+#     try:
+#         if model_type not in PREDICTION_FILES:
+#             return JSONResponse(
+#                 content={'error': f'Invalid model type: {model_type}'},
+#                 status_code=400
+#             )
 
+#         prediction_file = PREDICTION_FILES[model_type]
+#         if not os.path.exists(prediction_file):
+#             return JSONResponse(
+#                 content={'error': f'No predictions available for {model_type}. Model may not have been trained yet.'}, 
+#                 status_code=404
+#             )
+
+#         prediction = pd.read_csv(prediction_file)
+#         prediction['timestamp'] = pd.to_datetime(prediction['timestamp'])  # Преобразуем в datetime
+#         latest_prediction = prediction.iloc[-1].to_dict()
+#         latest_prediction['timestamp'] = latest_prediction['timestamp'].isoformat()  # Преобразуем в строку
+
+#         return JSONResponse(content=latest_prediction)
+#     except Exception as e:
+#         return JSONResponse(content={'error': str(e)}, status_code=500)
+
+
+class FetcherMetrics:
+
+    def __init__(self,*,url:str,uuid:str,storage):
+        self.url = url
+        self.uuid = uuid
+        self.storage = storage
+
+    def fetch_metrics(self):
+        # Подавляем предупреждение NotOpenSSLWarning
+        warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
+
+        # Создаем map для группировки данных по node
+        node_data_map = {}
+
+
+        # Функция для преобразования timestamp в формат для Prophet
+        def convert_timestamp(ts):
+            return datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+
+        # Указываем временной диапазон: последний год
+        end_time = datetime.utcnow()
+        start_time = end_time - timedelta(days=365)
+
+        # Шаг для разбиения временного диапазона (15 дней)
+        time_delta = timedelta(days=15)
+
+
+        # Функция для сброса данных в файл
+        def dump_data_to_file(node_data_map, filename):
+            # Сортируем данные по времени для каждого node
+            for node in node_data_map:
+                node_data_map[node].sort(key=lambda x: x["ds"])
+
+            # Открываем файл для добавления данных
+            with open(filename, 'a') as f:
+                for node, series in node_data_map.items():
+                    for point in series:
+                        f.write(json.dumps({"node": node, "ds": point["ds"], "y": point["y"]}) + "\n")
+
+
+        # Указываем node (если она известна) или оставляем пустой строкой
+        node = ""  # Замените на известное значение node, если оно есть
+
+        current_start = start_time
+        while current_start < end_time:
+            current_end = min(current_start + time_delta, end_time)
+            # Формируем тело запроса
+            query = f'rate(libvirt_domain_info_cpu_time_seconds_total{{uuid="{self.uuid}"}}[1m]) * 100 / ' \
+                    f'libvirt_domain_info_virtual_cpus{{uuid="{self.uuid}"}}'
+            params = {
+                "query": query,
+                "start": current_start.timestamp(),  # Начало периода (timestamp)
+                "end": current_end.timestamp(),  # Конец периода (timestamp)
+                "step": "1m"  # Шаг (например, 60 секунд)
+            }
+
+            try:
+                # Выполняем запрос
+                print(f"Выполняю запрос для UUID: {self.uuid} с {current_start} по {current_end}...")
+                response = requests.get(self.url, params=params)
+                response.raise_for_status()  # Проверка на ошибки HTTP
+                data = response.json()
+                print("Запрос выполнен успешно.")
+            except requests.exceptions.RequestException as e:
+                print(f"Ошибка при выполнении запроса для UUID {self.uuid}: {e}")
+                current_start = current_end
+                continue
+
+            # Обрабатываем ответ
+            if data["status"] == "success":
+                for result in data["data"]["result"]:
+                    # Если node еще не в карте, добавляем его
+                    if node not in node_data_map:
+                        node_data_map[node] = []
+                    # Добавляем все значения (timestamp + метрика) в массив для этого node
+                    for value in result["values"]:
+                        timestamp = int(value[0])
+                        metric_value = float(value[1])
+                        node_data_map[node].append({
+                            "ds": convert_timestamp(timestamp),  # Время в формате для Prophet
+                            "y": metric_value  # Значение метрики
+                        })
+
+            # Переходим к следующему временному интервалу
+            current_start = current_end
+
+        # Сбрасываем данные в файл
+        dump_data_to_file(node_data_map, 'node_data_130592_623a030d0392.json')
+
+        print("Данные успешно экспортированы в файл node_data.jsonl")
 
 if __name__ == "__main__":
+    # Инициализация конфигурации
+    env_config = EnvConfig()
+
+    # 0 - Инициализация хранилища
+    storage = StorageFactory.create_storage(env_config)
+
+    # 1 - fetch metrics 
+    fetcher = FetcherMetrics(
+                url=env_config.url_for_metrics,
+                uuid=env_config.uuid_node,
+                storge=storage
+    )
+
+    # Планировщик
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(fetcher.run(), 'interval', seconds=3)
+    scheduler.start()
+
+    # Инициализация конфигурации
+    # config_ini = ConfigParser()
+    # config_ini.read('config.ini')
+
+    # # Добавить в конфиг
+    # PROMETHEUS_URL = config_ini.get('PROMETHEUS', 'Url')
+    # CPU_QUERY = config_ini.get('PROMETHEUS', 'CpuQuery')
+    # MEMORY_QUERY = config_ini.get('PROMETHEUS', 'MemoryQuery')
+
+
+
+    # Инициализация моделей
+    # models = {
+    #     'polynomial': PolynomialModel(),
+    #     'xgboost': XGBoostModel(None),
+    #     'sarima': SARIMAModel(data_retention='4H')
+    # }
+
+    # # Инициализация после других глобальных переменных
+    # metrics_comparator = MetricsComparator(data_retention='8670H')  # Например, для хранения данных за последние 365 days * 24 hours
+    # metrics_storage = MetricsStorage(storage_path='./metrics_data', retention_period=timedelta(days=365))
+
+
+    # # Инициализация сервисов
+    # prediction_service = PredictionService(models['xgboost'], storage)
+    # error_service = ErrorCalculationService(storage)
+
+    # Задача для обучения модели
+    # async def train_model():
+    #     await model_trainer.train_model()
+
+    # # Планировщик
+    # scheduler = AsyncIOScheduler()
+    # scheduler.add_job(collect_metrics, 'interval', minutes=1)
+    # scheduler.add_job(train_model, 'interval', minutes=1)
+    # scheduler.start()
+
     app.run(host="0.0.0.0", port=5000)

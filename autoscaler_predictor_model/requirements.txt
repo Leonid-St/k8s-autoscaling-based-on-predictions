@@ -53,3 +53,5 @@ pydantic
 uvicorn
 python-multipart
 aiohttp
+psycopg2-binary
+influxdb_client

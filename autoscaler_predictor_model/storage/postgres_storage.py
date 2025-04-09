@@ -10,10 +10,14 @@ class PostgresStorage(StorageService):
 
     def _init_tables(self):
         with self.conn.cursor() as cur:
+            # Создаем таблицы, если они не существуют
+            cur.execute("""
+                CREATE EXTENSION IF NOT EXISTS timescaledb;
+            """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS predictions (
                     id SERIAL PRIMARY KEY,
-                    timestamp TIMESTAMP NOT NULL,
+                    timestamp TIMESTAMPTZ NOT NULL,
                     node VARCHAR(255) NOT NULL,
                     model_type VARCHAR(255) NOT NULL,
                     cpu FLOAT,
@@ -23,7 +27,7 @@ class PostgresStorage(StorageService):
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS actuals (
                     id SERIAL PRIMARY KEY,
-                    timestamp TIMESTAMP NOT NULL,
+                    timestamp TIMESTAMPTZ NOT NULL,
                     node VARCHAR(255) NOT NULL,
                     cpu FLOAT,
                     memory FLOAT
@@ -32,12 +36,25 @@ class PostgresStorage(StorageService):
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS errors (
                     id SERIAL PRIMARY KEY,
-                    timestamp TIMESTAMP NOT NULL,
+                    timestamp TIMESTAMPTZ NOT NULL,
                     node VARCHAR(255) NOT NULL,
                     model_type VARCHAR(255) NOT NULL,
                     mse FLOAT,
                     mae FLOAT
                 )
+            """)
+            self.conn.commit()
+
+        # Преобразуем таблицы в гипертаблицы
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                SELECT create_hypertable('predictions', by_range('timestamp'));
+            """)
+            cur.execute("""
+                SELECT create_hypertable('actuals', by_range('timestamp'));
+            """)
+            cur.execute("""
+                SELECT create_hypertable('errors', by_range('timestamp'));
             """)
             self.conn.commit()
 
