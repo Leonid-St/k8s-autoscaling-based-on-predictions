@@ -1,0 +1,3 @@
+class MetricModel:
+    Timestamp
+    Value

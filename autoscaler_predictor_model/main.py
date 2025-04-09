@@ -4,9 +4,17 @@ from datetime import datetime, timedelta
 import warnings
 from urllib3.exceptions import NotOpenSSLWarning
 
+from models.polynomial import PolynomialModel
+from metrics.metrics_collector import MetricsCollector
 from config import EnvConfig
+from metrics.metrics_fetcher import MetricsFetcher
+from metrics.metrics_fetcher_victoria import VictoriaMetricsCollector, VictoriaMetricsFetcher
+from models.sarima import SARIMAModel
+from models.xgboost import XGBoostModel
 from storage.storage_factory import StorageFactory
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+from storage.storage_service import StorageService
 
 # app = FastAPI()
 
@@ -282,98 +290,146 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 #     except Exception as e:
 #         return JSONResponse(content={'error': str(e)}, status_code=500)
 
+# class Metric:
+#     timastap int
+#     cpu
+# class FetcherMetrics:
 
-class FetcherMetrics:
+#     def __init__(self,*,url:str,uuid:str,storage):
+#         self.url = url
+#         self.uuid = uuid
+#         self.storage = storage
 
-    def __init__(self,*,url:str,uuid:str,storage):
-        self.url = url
-        self.uuid = uuid
-        self.storage = storage
+#     def fetch_metrics_and_colletc_in_storage(self):
+#         self.fetch_metrics()
+        
+#     def fetch_metric_1m(self):
+#         query = f'rate(libvirt_domain_info_cpu_time_seconds_total{{uuid="{self.uuid}"}}[1m]) * 100 / ' \
+#         f'libvirt_domain_info_virtual_cpus{{uuid="{self.uuid}"}}'
+#         params = {
+#             "query": query,
+#             "step": "1m"  # Шаг (например, 60 секунд)
+#             }
 
-    def fetch_metrics(self):
-        # Подавляем предупреждение NotOpenSSLWarning
-        warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
+#         try:
+#             # Выполняем запрос
+#             print(f"Выполняю запрос для UUID: {self.uuid} с {current_start} по {current_end}...")
+#             response = requests.get(self.url, params=params)
+#             response.raise_for_status()  # Проверка на ошибки HTTP
+#             data = response.json()
+#             print("Запрос выполнен успешно.")
+#         except requests.exceptions.RequestException as e:
+#             print(f"Ошибка при выполнении запроса для UUID {self.uuid}: {e}")
+#             current_start = current_end
+#             continue
 
-        # Создаем map для группировки данных по node
-        node_data_map = {}
+#         # Обрабатываем ответ
+#         if data["status"] == "success":
+#             for result in data["data"]["result"]:
 
-
-        # Функция для преобразования timestamp в формат для Prophet
-        def convert_timestamp(ts):
-            return datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-
-
-        # Указываем временной диапазон: последний год
-        end_time = datetime.utcnow()
-        start_time = end_time - timedelta(days=365)
-
-        # Шаг для разбиения временного диапазона (15 дней)
-        time_delta = timedelta(days=15)
-
-
-        # Функция для сброса данных в файл
-        def dump_data_to_file(node_data_map, filename):
-            # Сортируем данные по времени для каждого node
-            for node in node_data_map:
-                node_data_map[node].sort(key=lambda x: x["ds"])
-
-            # Открываем файл для добавления данных
-            with open(filename, 'a') as f:
-                for node, series in node_data_map.items():
-                    for point in series:
-                        f.write(json.dumps({"node": node, "ds": point["ds"], "y": point["y"]}) + "\n")
+#                 # Добавляем все значения (timestamp + метрика) в массив для этого node
+#                 #for value in result["values"]:
+#                     timestamp = int(value[0])
+#                     metric_value = float(value[1])
+#                     node_data_map[node].append({
+#                         "ds": convert_timestamp(timestamp),  # Время в формате для Prophet
+#                         "y": metric_value  # Значение метрики
+#                     })
 
 
-        # Указываем node (если она известна) или оставляем пустой строкой
-        node = ""  # Замените на известное значение node, если оно есть
+    # def fetch_metrics(self):
+    #     # Подавляем предупреждение NotOpenSSLWarning
+    #     warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
 
-        current_start = start_time
-        while current_start < end_time:
-            current_end = min(current_start + time_delta, end_time)
-            # Формируем тело запроса
-            query = f'rate(libvirt_domain_info_cpu_time_seconds_total{{uuid="{self.uuid}"}}[1m]) * 100 / ' \
-                    f'libvirt_domain_info_virtual_cpus{{uuid="{self.uuid}"}}'
-            params = {
-                "query": query,
-                "start": current_start.timestamp(),  # Начало периода (timestamp)
-                "end": current_end.timestamp(),  # Конец периода (timestamp)
-                "step": "1m"  # Шаг (например, 60 секунд)
-            }
+    #     # Создаем map для группировки данных по node
+    #     node_data_map = {}
 
-            try:
-                # Выполняем запрос
-                print(f"Выполняю запрос для UUID: {self.uuid} с {current_start} по {current_end}...")
-                response = requests.get(self.url, params=params)
-                response.raise_for_status()  # Проверка на ошибки HTTP
-                data = response.json()
-                print("Запрос выполнен успешно.")
-            except requests.exceptions.RequestException as e:
-                print(f"Ошибка при выполнении запроса для UUID {self.uuid}: {e}")
-                current_start = current_end
-                continue
 
-            # Обрабатываем ответ
-            if data["status"] == "success":
-                for result in data["data"]["result"]:
-                    # Если node еще не в карте, добавляем его
-                    if node not in node_data_map:
-                        node_data_map[node] = []
-                    # Добавляем все значения (timestamp + метрика) в массив для этого node
-                    for value in result["values"]:
-                        timestamp = int(value[0])
-                        metric_value = float(value[1])
-                        node_data_map[node].append({
-                            "ds": convert_timestamp(timestamp),  # Время в формате для Prophet
-                            "y": metric_value  # Значение метрики
-                        })
+    #     # Функция для преобразования timestamp в формат для Prophet
+    #     def convert_timestamp(ts):
+    #         return datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 
-            # Переходим к следующему временному интервалу
-            current_start = current_end
 
-        # Сбрасываем данные в файл
-        dump_data_to_file(node_data_map, 'node_data_130592_623a030d0392.json')
+    #     # Указываем временной диапазон: последний год
+    #     end_time = datetime.utcnow()
+    #     start_time = end_time - timedelta(days=365)
 
-        print("Данные успешно экспортированы в файл node_data.jsonl")
+    #     # Шаг для разбиения временного диапазона (15 дней)
+    #     time_delta = timedelta(days=15)
+
+
+    #     # Функция для сброса данных в файл
+    #     def dump_data_to_file(node_data_map, filename):
+    #         # Сортируем данные по времени для каждого node
+    #         for node in node_data_map:
+    #             node_data_map[node].sort(key=lambda x: x["ds"])
+
+    #         # Открываем файл для добавления данных
+    #         with open(filename, 'a') as f:
+    #             for node, series in node_data_map.items():
+    #                 for point in series:
+    #                     f.write(json.dumps({"node": node, "ds": point["ds"], "y": point["y"]}) + "\n")
+
+
+    #     # Указываем node (если она известна) или оставляем пустой строкой
+    #     node = ""  # Замените на известное значение node, если оно есть
+
+    #     current_start = start_time
+    #     while current_start < end_time:
+    #         current_end = min(current_start + time_delta, end_time)
+    #         # Формируем тело запроса
+    #         query = f'rate(libvirt_domain_info_cpu_time_seconds_total{{uuid="{self.uuid}"}}[1m]) * 100 / ' \
+    #                 f'libvirt_domain_info_virtual_cpus{{uuid="{self.uuid}"}}'
+    #         params = {
+    #             "query": query,
+    #             "start": current_start.timestamp(),  # Начало периода (timestamp)
+    #             "end": current_end.timestamp(),  # Конец периода (timestamp)
+    #             "step": "1m"  # Шаг (например, 60 секунд)
+    #         }
+
+    #         try:
+    #             # Выполняем запрос
+    #             print(f"Выполняю запрос для UUID: {self.uuid} с {current_start} по {current_end}...")
+    #             response = requests.get(self.url, params=params)
+    #             response.raise_for_status()  # Проверка на ошибки HTTP
+    #             data = response.json()
+    #             print("Запрос выполнен успешно.")
+    #         except requests.exceptions.RequestException as e:
+    #             print(f"Ошибка при выполнении запроса для UUID {self.uuid}: {e}")
+    #             current_start = current_end
+    #             continue
+
+    #         # Обрабатываем ответ
+    #         if data["status"] == "success":
+    #             for result in data["data"]["result"]:
+    #                 # Если node еще не в карте, добавляем его
+    #                 if node not in node_data_map:
+    #                     node_data_map[node] = []
+    #                 # Добавляем все значения (timestamp + метрика) в массив для этого node
+    #                 for value in result["values"]:
+    #                     timestamp = int(value[0])
+    #                     metric_value = float(value[1])
+    #                     node_data_map[node].append({
+    #                         "ds": convert_timestamp(timestamp),  # Время в формате для Prophet
+    #                         "y": metric_value  # Значение метрики
+    #                     })
+
+    #         # Переходим к следующему временному интервалу
+    #         current_start = current_end
+
+    #     # Сбрасываем данные в файл
+    #     dump_data_to_file(node_data_map, 'node_data_130592_623a030d0392.json')
+
+    #     print("Данные успешно экспортированы в файл node_data.jsonl")
+    
+# Задача для сбора метрик
+# async def collect_metrics():
+#     end_time = datetime.now()
+#     start_time = end_time - timedelta(minutes=1)
+#     cpu_data = await prom_collector.get_cpu_metrics(env_config.uuid_node, start_time, end_time)
+#     if not cpu_data.empty:
+#         metrics_storage.save_metrics(cpu_data)
+
 
 if __name__ == "__main__":
     # Инициализация конфигурации
@@ -383,15 +439,26 @@ if __name__ == "__main__":
     storage = StorageFactory.create_storage(env_config)
 
     # 1 - fetch metrics 
-    fetcher = FetcherMetrics(
-                url=env_config.url_for_metrics,
-                uuid=env_config.uuid_node,
-                storge=storage
+    fetcher = VictoriaMetricsFetcher(env_config.url_for_metrics)
+
+    
+    collector = MetricsCollector(
+        uuid=env_config.uuid_node,
+        fetcher=fetcher,
+        storage=storage,
     )
+    
+    #Инициализация моделей
+    models = {
+        'polynomial': PolynomialModel(),
+        'xgboost': XGBoostModel(None),
+        'sarima': SARIMAModel(data_retention='4H')
+    }
 
     # Планировщик
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(fetcher.run(), 'interval', seconds=3)
+    scheduler.add_job(collector.collect(), 'interval', seconds=60)
+    
     scheduler.start()
 
     # Инициализация конфигурации
@@ -403,14 +470,6 @@ if __name__ == "__main__":
     # CPU_QUERY = config_ini.get('PROMETHEUS', 'CpuQuery')
     # MEMORY_QUERY = config_ini.get('PROMETHEUS', 'MemoryQuery')
 
-
-
-    # Инициализация моделей
-    # models = {
-    #     'polynomial': PolynomialModel(),
-    #     'xgboost': XGBoostModel(None),
-    #     'sarima': SARIMAModel(data_retention='4H')
-    # }
 
     # # Инициализация после других глобальных переменных
     # metrics_comparator = MetricsComparator(data_retention='8670H')  # Например, для хранения данных за последние 365 days * 24 hours
