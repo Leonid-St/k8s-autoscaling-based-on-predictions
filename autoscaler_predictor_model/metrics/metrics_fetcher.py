@@ -5,13 +5,16 @@ import aiohttp
 
 class MetricsFetcher(ABC):
     @abstractmethod
-    def get_cpu_metrics_1m(self, uuid: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
+    async def get_cpu_metrics_1m(self, uuid: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def get_memory_metrics_1m(self, uuid: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
+    async def get_memory_metrics_1m(self, uuid: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
         pass
 
+    @abstractmethod
+    async def get_cpu_memory_metrics_1m(self, uuid: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
+        pass
 # class MetricsFetcher:
 #     def __init__(self, base_url: str):
 #         self.base_url = base_url

@@ -1,12 +1,18 @@
 import os
 from typing import Optional
+from dotenv import load_dotenv
 
+
+load_dotenv('.env') 
+        
 class EnvConfig:
     def __init__(self):
+
         self.uuid_node = self._get_env_var("UUID_NODE", required=True)
         self.url_for_metrics = self._get_env_var("URL_FOR_METRICS", required=True)
         self.db_config = self._get_db_config()
         self.influxdb_config = self._get_influx_db_config()
+        self.storage_type = self._get_env_var("STORAGE_TYPE",required=True)
 
     def _get_env_var(self, var_name: str, required: bool = False) -> Optional[str]:
         value = os.getenv(var_name)

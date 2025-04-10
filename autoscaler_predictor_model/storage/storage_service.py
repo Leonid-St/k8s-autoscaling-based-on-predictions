@@ -4,11 +4,11 @@ import pandas as pd
 
 class StorageService(ABC):
     @abstractmethod
-    def save_prediction(self, timestamp: datetime, node: str, model_type: str, prediction: dict):
+    def save_prediction(self, timestamp: datetime, node: str, model_type: str, prediction_type: str, prediction: dict):
         pass
 
     @abstractmethod
-    def save_actual(self, timestamp: datetime, node: str, metrics: dict):
+    async def save_actual(self,*, node: str, metrics: dict):
         pass
 
     @abstractmethod

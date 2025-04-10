@@ -1,4 +1,6 @@
+import asyncio
 import json
+from fastapi import FastAPI
 import requests
 from datetime import datetime, timedelta
 import warnings
@@ -8,15 +10,16 @@ from models.polynomial import PolynomialModel
 from metrics.metrics_collector import MetricsCollector
 from config import EnvConfig
 from metrics.metrics_fetcher import MetricsFetcher
-from metrics.metrics_fetcher_victoria import VictoriaMetricsCollector, VictoriaMetricsFetcher
+from metrics.metrics_fetcher_victoria import VictoriaMetricsFetcher
 from models.sarima import SARIMAModel
 from models.xgboost import XGBoostModel
 from storage.storage_factory import StorageFactory
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from storage.storage_service import StorageService
+import uvicorn
 
-# app = FastAPI()
+app = FastAPI()
 
 # MODEL_PATH = '/app/models/'
 
@@ -58,38 +61,39 @@ from storage.storage_service import StorageService
 
 # @app.post("/fit/{model_type}")
 # async def fit_model(model_type: str, file: UploadFile = File(...)):
-#     try:
-#         # Обработка файла и обучение модели
-#         df = process_uploaded_file(file)
+#     return {"status": f"{200} model updated"}
+    # try:
+    #     # Обработка файла и обучение модели
+    #     df = process_uploaded_file(file)
         
-#         if model_type == 'polynomial':
-#             if 'minutes_since_midnight' not in df.columns:
-#                 df = add_time_features(df)
-#             models[model_type].fit(df[['minutes_since_midnight']], df[['minutes_since_midnight']])
-#         elif model_type == 'xgboost':
-#             models[model_type].fit(df)
-#         elif model_type == 'sarima':
-#             models[model_type].update_data(df)
-#         else:
-#             raise HTTPException(status_code=400, detail="Invalid model type")
+    #     if model_type == 'polynomial':
+    #         if 'minutes_since_midnight' not in df.columns:
+    #             df = add_time_features(df)
+    #         models[model_type].fit(df[['minutes_since_midnight']], df[['minutes_since_midnight']])
+    #     elif model_type == 'xgboost':
+    #         models[model_type].fit(df)
+    #     elif model_type == 'sarima':
+    #         models[model_type].update_data(df)
+    #     else:
+    #         raise HTTPException(status_code=400, detail="Invalid model type")
 
-#         # Создаем предсказание и сохраняем его
-#         prediction_timestamp = datetime.now() + timedelta(minutes=5)
-#         prediction = models[model_type].predict(prediction_timestamp)
+    #     # Создаем предсказание и сохраняем его
+    #     prediction_timestamp = datetime.now() + timedelta(minutes=5)
+    #     prediction = models[model_type].predict(prediction_timestamp)
 
-#         prediction_df = pd.DataFrame({
-#             'timestamp': [prediction_timestamp],
-#             'cpu': [prediction['cpu']],
-#             'memory': [prediction.get('memory', 0)]  # Для моделей, которые не предсказывают memory
-#         })
-#         prediction_df.to_csv(PREDICTION_FILES[model_type], index=False)
+    #     prediction_df = pd.DataFrame({
+    #         'timestamp': [prediction_timestamp],
+    #         'cpu': [prediction['cpu']],
+    #         'memory': [prediction.get('memory', 0)]  # Для моделей, которые не предсказывают memory
+    #     })
+    #     prediction_df.to_csv(PREDICTION_FILES[model_type], index=False)
 
-#         return {"status": f"{model_type} model updated"}
+    #     return {"status": f"{model_type} model updated"}
 
-#     except KeyError as e:
-#         raise HTTPException(status_code=400, detail=str(e))
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+    # except KeyError as e:
+    #     raise HTTPException(status_code=400, detail=str(e))
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=str(e))
 
 
 # @app.get("/predict/<model_type>")
@@ -432,6 +436,9 @@ from storage.storage_service import StorageService
 
 
 if __name__ == "__main__":
+    import logging
+
+    logger = logging.getLogger("uvicorn")
     # Инициализация конфигурации
     env_config = EnvConfig()
 
@@ -448,19 +455,19 @@ if __name__ == "__main__":
         storage=storage,
     )
     
-    #Инициализация моделей
-    models = {
-        'polynomial': PolynomialModel(),
-        'xgboost': XGBoostModel(None),
-        'sarima': SARIMAModel(data_retention='4H')
-    }
+    # #Инициализация моделей
+    # models = {
+    #     'polynomial': PolynomialModel(),
+    #     'xgboost': XGBoostModel(None),
+    #     'sarima': SARIMAModel(data_retention='4H')
+    # }
 
     # Планировщик
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(collector.collect(), 'interval', seconds=60)
+    # scheduler = AsyncIOScheduler()
+    # scheduler.add_job(collector.collect, 'interval', seconds=60)
     
-    scheduler.start()
-
+    # scheduler.start()
+    asyncio.run(collector.collect())
     # Инициализация конфигурации
     # config_ini = ConfigParser()
     # config_ini.read('config.ini')
@@ -490,4 +497,4 @@ if __name__ == "__main__":
     # scheduler.add_job(train_model, 'interval', minutes=1)
     # scheduler.start()
 
-    app.run(host="0.0.0.0", port=5000)
+    uvicorn.run(app, host="0.0.0.0", port=5000)
