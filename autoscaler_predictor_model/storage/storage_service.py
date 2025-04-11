@@ -20,7 +20,7 @@ class StorageService(ABC):
         pass
 
     @abstractmethod
-    def get_actuals(self, start_date: datetime, end_date: datetime, node: str = None) -> pd.DataFrame:
+    def get_actual(self, start_date: datetime, end_date: datetime, node: str = None) -> pd.DataFrame:
         pass
 
     @abstractmethod

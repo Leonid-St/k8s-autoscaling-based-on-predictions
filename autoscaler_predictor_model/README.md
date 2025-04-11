@@ -330,6 +330,7 @@ psql -d "postgres://<username>:<password>@<host>:<port>/<database-name>"
 Add TimescaleDB to the database
 ```bash
 CREATE EXTENSION IF NOT EXISTS timescaledb;
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 ```
 Check that TimescaleDB is installed
 ```bash
