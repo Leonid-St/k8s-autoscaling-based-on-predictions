@@ -118,11 +118,16 @@ class PostgresStorage(StorageService):
             await self._create_table_if_not_exists(table_name, "actual")
 
         with self.conn.cursor() as cur:
-            cur.execute(f"""
-                INSERT INTO {table_name} (timestamp, actual_cpu, actual_memory)
-                VALUES (%s, %s, %s)
-            """, (metrics.get('timestamp'), metrics.get('cpu'), metrics.get('memory')))
-            self.conn.commit()
+            try:
+                cur.execute(f"""
+                    INSERT INTO {table_name} (timestamp, actual_cpu, actual_memory)
+                    VALUES (%s, %s, %s)
+                """, (metrics.get('timestamp'), metrics.get('cpu'), metrics.get('memory')))
+                self.conn.commit()
+            except Exception as e:
+                self.conn.rollback()  # Откатываем транзакцию в случае ошибки
+                logger.error(f"Error saving actual metrics: {e}")
+                raise
         logger.info("metric saved in postgres for: " + node)
 
     def save_error(self, timestamp: datetime, node: str, model_type: str, error_metrics: dict):
