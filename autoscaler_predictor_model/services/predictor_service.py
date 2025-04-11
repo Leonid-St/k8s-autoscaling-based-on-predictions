@@ -2,10 +2,11 @@ from datetime import datetime, timedelta
 import pandas as pd
 from typing import List, Callable, Awaitable
 import logging
-from models.xgboost_model import XGBoostModel
+from models.xgboost import XGBoostModel
 from storage.storage_service import StorageService
 
 logger = logging.getLogger(__name__)
+
 
 class PredictorService:
     def __init__(self, model: XGBoostModel, storage: StorageService, node_id: str):
@@ -32,10 +33,10 @@ class PredictorService:
         try:
             # Получаем текущее время
             now = datetime.now()
-            
+
             # Генерируем временные метки для предсказаний (5 минут вперед)
             prediction_times = [now + timedelta(minutes=i) for i in range(1, 6)]
-            
+
             # Выполняем предсказания
             predictions = []
             for timestamp in prediction_times:
@@ -45,7 +46,7 @@ class PredictorService:
                     'cpu': prediction['cpu'],
                     'memory': prediction.get('memory', 0)
                 })
-            
+
             # Сохраняем предсказания в хранилище
             for prediction in predictions:
                 await self.storage.save_prediction(
@@ -54,9 +55,9 @@ class PredictorService:
                     model_type='xgboost',
                     prediction=prediction
                 )
-            
+
             logger.info(f"Predictions saved for node {self.node_id}")
             await self._notify_observers()
-            
+
         except Exception as e:
-            logger.error(f"Error making predictions: {e}") 
+            logger.error(f"Error making predictions: {e}")

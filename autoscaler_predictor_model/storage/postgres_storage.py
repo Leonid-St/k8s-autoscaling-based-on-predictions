@@ -117,10 +117,11 @@ class PostgresStorage(StorageService):
                 """, (timestamp, prediction.get('cpu'), prediction.get('memory')))
                 self.conn.commit()
             except Exception as e:
-                self.conn.rollback()  
+                self.conn.rollback()
                 logger.error(f"Error saving predicted metrics: {e}")
                 raise
         logger.info("metric predicted saved in postgres for: " + node)
+
     async def save_actual(self, *, node: str, metrics: dict):
         table_name = get_valid_table_name(node, "actual")
         if not self.actual_table_created:
@@ -139,7 +140,7 @@ class PostgresStorage(StorageService):
                 raise
         logger.info("metric actual saved in postgres for: " + node)
 
-    def save_error(self, timestamp: datetime, node: str, model_type: str, error_metrics: dict):
+    async def save_error(self, timestamp: datetime, node: str, model_type: str, error_metrics: dict):
         table_name = get_valid_table_name(node, "error")
         if not self.error_table_created:
             await self._create_table_if_not_exists(table_name, "error")
@@ -156,8 +157,8 @@ class PostgresStorage(StorageService):
                 raise
         logger.info("metric error saved in postgres for: " + node)
 
-    def get_predictions(self, start_date: datetime, end_date: datetime, node: str = None,
-                        model_type: str = None) -> pd.DataFrame:
+    async def get_predictions(self, start_date: datetime, end_date: datetime, node: str = None,
+                              model_type: str = None) -> pd.DataFrame:
         if not node:
             raise ValueError("Node must be specified")
 
@@ -230,7 +231,8 @@ class PostgresStorage(StorageService):
                 return pd.DataFrame(results, columns=['timestamp', 'cpu', 'memory'])
             return pd.DataFrame()
 
-    async def save_error(self, start_time: datetime, end_time: datetime, node: str, model_type: str, error_metrics: dict):
+    async def save_error(self, start_time: datetime, end_time: datetime, node: str, model_type: str,
+                         error_metrics: dict):
         table_name = get_valid_table_name(node, "error")
         await self._create_table_if_not_exists(table_name, "error")
 

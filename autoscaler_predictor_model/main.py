@@ -15,6 +15,8 @@ from metrics.metrics_fetcher import MetricsFetcher
 from metrics.metrics_fetcher_victoria import VictoriaMetricsFetcher
 from models.sarima import SARIMAModel
 from models.xgboost import XGBoostModel
+from services.predictor_service import PredictorService
+from services.teacher_service import TeacherService
 from storage.storage_factory import StorageFactory
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -460,6 +462,13 @@ async def lifespan(app: FastAPI):
         storage=storage,
     )
 
+    # Инициализация моделей
+    models = {
+        'polynomial': PolynomialModel(),
+        'xgboost': XGBoostModel(None),
+        'sarima': SARIMAModel(data_retention='4H')
+    }
+
     teacher_service = TeacherService(
         model=models['xgboost'],
         storage=storage,
@@ -491,10 +500,6 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(collector.collect, 'interval', seconds=60)
     scheduler.start()
 
-    # Инициализация XGBoostModel с передачей cluster_metrics
-    cluster_metrics = ClusterMetrics()  # Предположим, что у вас есть класс ClusterMetrics
-    models['xgboost'] = XGBoostModel(cluster_metrics)
-
     yield
     scheduler.shutdown()
 
@@ -503,14 +508,6 @@ if __name__ == "__main__":
     import logging
 
     logger = logging.getLogger("uvicorn.error")
-
-
-    # #Инициализация моделей
-    # models = {
-    #     'polynomial': PolynomialModel(),
-    #     'xgboost': XGBoostModel(None),
-    #     'sarima': SARIMAModel(data_retention='4H')
-    # }
 
     # scheduler.add_job(collector.collect, 'interval', seconds=60)
 
