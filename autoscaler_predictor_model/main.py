@@ -466,6 +466,16 @@ async def lifespan(app: FastAPI):
     # Регистрируем TeacherService как наблюдателя
     collector.add_observer(teacher_service.on_new_data)
 
+    # Инициализация PredictorService
+    predictor_service = PredictorService(
+        model=models['xgboost'],
+        storage=storage,
+        node_id=env_config.uuid_node
+    )
+
+    # Регистрируем PredictorService как наблюдателя в TeacherService
+    teacher_service.add_observer(predictor_service.on_model_updated)
+
     scheduler.add_job(collector.collect, 'interval', seconds=60)
     scheduler.start()
     yield

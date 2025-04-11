@@ -156,19 +156,23 @@ class PostgresStorage(StorageService):
 
         return pd.read_sql(query, self.conn, params=params)
 
-    def get_actual(self, start_date: datetime, end_date: datetime, node: str = None) -> pd.DataFrame:
-        if not node:
-            raise ValueError("Node must be specified")
-
+    async def get_actual(self, node: str) -> dict:
         table_name = get_valid_table_name(node, "actual")
-        query = f"""
-            SELECT timestamp, actual_cpu, actual_memory
-            FROM {table_name}
-            WHERE timestamp BETWEEN %s AND %s
-        """
-        params = [start_date, end_date]
-
-        return pd.read_sql(query, self.conn, params=params)
+        with self.conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT timestamp, actual_cpu, actual_memory
+                FROM {table_name}
+                ORDER BY timestamp DESC
+                LIMIT 1
+            """)
+            result = cur.fetchone()
+            if result:
+                return {
+                    'timestamp': result[0],
+                    'cpu': result[1],
+                    'memory': result[2]
+                }
+            return {}
 
     def get_errors(self, start_date: datetime, end_date: datetime, node: str = None,
                    model_type: str = None) -> pd.DataFrame:
