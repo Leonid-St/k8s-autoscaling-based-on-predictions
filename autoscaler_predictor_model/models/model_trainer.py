@@ -13,7 +13,7 @@ class ModelTrainer:
     def update(self):
         # Обрабатываем новый файл
         #latest_metrics = pd.read_csv(file_path)
-        self.metrics_storage.
+        self.metrics_storage.save_prediction()
         if not latest_metrics.empty:
             self.model.fit(latest_metrics)
             print("Model updated with new data") 
