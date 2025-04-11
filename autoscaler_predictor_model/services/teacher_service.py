@@ -14,7 +14,7 @@ class TeacherService:
         self.node_id = node_id
         self.scheduler = scheduler
 
-    async def _train_model(self):
+    async def on_new_data(self):
         try:
             end_time = datetime.now()
             start_time = end_time - timedelta(minutes=1)
@@ -37,7 +37,7 @@ class TeacherService:
     def start(self, interval: int = 60):
         # Добавляем задачу в уже запущенный планировщик
         self.scheduler.add_job(
-            self._train_model,
+            self.on_new_data,
             'interval',
             seconds=interval,
             next_run_time=datetime.now()

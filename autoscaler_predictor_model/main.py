@@ -457,18 +457,17 @@ async def lifespan(app: FastAPI):
         storage=storage,
     )
 
-    scheduler.add_job(collector.collect, 'interval', seconds=60)
-    scheduler.start()
-
     teacher_service = TeacherService(
         model=models['xgboost'],
         storage=storage,
-        node_id=env_config.uuid_node,
-        scheduler=scheduler 
+        node_id=env_config.uuid_node
     )
 
-    teacher_service.start()
+    # Регистрируем TeacherService как наблюдателя
+    collector.add_observer(teacher_service.on_new_data)
 
+    scheduler.add_job(collector.collect, 'interval', seconds=60)
+    scheduler.start()
     yield
     scheduler.shutdown()
 
