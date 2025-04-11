@@ -465,7 +465,7 @@ async def lifespan(app: FastAPI):
     # Инициализация моделей
     models = {
         'polynomial': PolynomialModel(),
-        'xgboost': XGBoostModel(None),
+        'xgboost': XGBoostModel(),
         'sarima': SARIMAModel(data_retention='4H')
     }
 
