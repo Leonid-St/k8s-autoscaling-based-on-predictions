@@ -22,6 +22,8 @@ from storage.storage_service import StorageService
 import uvicorn
 from contextlib import asynccontextmanager
 
+from services.comparator_service import ComparatorService
+
 # MODEL_PATH = '/app/models/'
 
 
@@ -475,6 +477,15 @@ async def lifespan(app: FastAPI):
 
     # Регистрируем PredictorService как наблюдателя в TeacherService
     teacher_service.add_observer(predictor_service.on_model_updated)
+
+    # Инициализация ComparatorService
+    comparator_service = ComparatorService(
+        storage=storage,
+        node_id=env_config.uuid_node
+    )
+
+    # Регистрируем ComparatorService как наблюдателя в PredictorService
+    predictor_service.add_observer(comparator_service.compare_and_save_errors)
 
     scheduler.add_job(collector.collect, 'interval', seconds=60)
     scheduler.start()
