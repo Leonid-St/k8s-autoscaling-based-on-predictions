@@ -1,5 +1,22 @@
 import xgboost as xgb
 import pandas as pd
+import sys
+import datetime
+
+
+# Кастомный callback для записи времени перед каждым блоком из 500 строк
+class TimeLoggingCallback(xgb.callback.TrainingCallback):
+    def __init__(self, log_file):
+        self.log_file = log_file
+        self.iteration_count = 0
+
+    def after_iteration(self, model, epoch, evals_log):
+        self.iteration_count += 1
+        # Если прошло 500 итераций, записываем время
+        if self.iteration_count % 500 == 0:
+            with open(self.log_file, 'a') as f:
+                f.write(f"\nВремя начала нового блока: {datetime.datetime.now()}\n")
+        return False  # Возвращаем False, чтобы обучение продолжалось
 
 
 class XGBoostModel:
@@ -26,13 +43,22 @@ class XGBoostModel:
         targets = df[['cpu', 'memory']].values
 
         if self._fitted:
+            # Открываем файл для записи лога
+            log_file = 'training_log_xgboost.txt'
+            # Открываем файл для записи лога
+            with open(log_file, 'w') as f:
+                f.write(f"Начало обучения: {datetime.datetime.now()}\n")
             self.model.fit(
                 features,
                 targets,
                 xgb_model=self.model.get_booster(),
                 eval_set=[(features, targets)],
-                early_stopping_rounds=10
+                verbose=True,
+               #callbacks=[TimeLoggingCallback(log_file)]
             )
+            # Закрываем файл лога
+            with open(log_file, 'a') as f:
+                f.write(f"Обучение завершено: {datetime.datetime.now()}\n")
         else:
             self.model.fit(features, targets)
             self._fitted = True

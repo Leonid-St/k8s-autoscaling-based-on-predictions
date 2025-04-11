@@ -15,8 +15,10 @@ def get_valid_table_name(uuid: str, table_type: str) -> str:
 class PostgresStorage(StorageService):
     def __init__(self, db_config):
         self.conn = psycopg2.connect(**db_config)
-        self.predicted_table_created = False
         self.actual_table_created = False
+        self.predicted_table_created = False
+        self.error_table_created = False
+
         # self._init_tables()
 
     # def _init_tables(self):
@@ -88,7 +90,7 @@ class PostgresStorage(StorageService):
                         predicted_memory FLOAT
                     )
                 """)
-                self.predition_table_created = True
+                self.predicted_table_created  = True
             elif table_type == "error":
                 cur.execute(f"""
                     CREATE TABLE IF NOT EXISTS {table_name} (
@@ -98,6 +100,7 @@ class PostgresStorage(StorageService):
                         mae FLOAT
                     )
                 """)
+                self.error_table_created = False
             cur.execute(f"""
                 SELECT create_hypertable('{table_name}', 'timestamp',if_not_exists => TRUE);
             """)
@@ -106,7 +109,7 @@ class PostgresStorage(StorageService):
 
     async def save_prediction(self, timestamp: datetime, node: str, model_type: str, prediction: dict):
         table_name = get_valid_table_name(node, "predicted")
-        if not self.prediction_table_created:
+        if not self.predicted_table_created:
             await self._create_table_if_not_exists(table_name, "predicted")
 
         with self.conn.cursor() as cur:
@@ -231,7 +234,7 @@ class PostgresStorage(StorageService):
                 return pd.DataFrame(results, columns=['timestamp', 'cpu', 'memory'])
             return pd.DataFrame()
 
-    async def save_error(self, start_time: datetime, end_time: datetime, node: str, model_type: str,
+    async def save_error(self, *,start_time: datetime, end_time: datetime, node: str, model_type: str,
                          error_metrics: dict):
         table_name = get_valid_table_name(node, "error")
         await self._create_table_if_not_exists(table_name, "error")

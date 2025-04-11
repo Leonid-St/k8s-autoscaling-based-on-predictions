@@ -6,6 +6,7 @@ from models.xgboost import XGBoostModel
 import logging
 from typing import List, Callable, Awaitable
 
+
 logger = logging.getLogger(__name__)
 
 

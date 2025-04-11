@@ -59,7 +59,7 @@ class VictoriaMetricsFetcher(MetricsFetcher):
 
     async def get_cpu_memory_metrics_1m(self, uuid: str):
         cpu = await self.get_cpu_metrics_1m(uuid)
-        memory = await self.get_cpu_metrics_1m(uuid)
+        memory = await self.get_memory_metrics_1m(uuid)
         logger.info("metric fetched for: " + uuid)
         return {
             "timestamp": cpu["timestamp"],
