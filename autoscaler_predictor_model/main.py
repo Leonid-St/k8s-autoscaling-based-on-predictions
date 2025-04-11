@@ -420,6 +420,7 @@ from services.comparator_service import ComparatorService
 #                         "y": metric_value  # Значение метрики
 #                     })
 
+
 #         # Переходим к следующему временному интервалу
 #         current_start = current_end
 
@@ -489,6 +490,11 @@ async def lifespan(app: FastAPI):
 
     scheduler.add_job(collector.collect, 'interval', seconds=60)
     scheduler.start()
+
+    # Инициализация XGBoostModel с передачей cluster_metrics
+    cluster_metrics = ClusterMetrics()  # Предположим, что у вас есть класс ClusterMetrics
+    models['xgboost'] = XGBoostModel(cluster_metrics)
+
     yield
     scheduler.shutdown()
 

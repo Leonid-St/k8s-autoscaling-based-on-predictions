@@ -4,27 +4,9 @@ import pandas as pd
 
 class XGBoostModel:
     def __init__(self, cluster_metrics):
-        self.cpu_model = xgb.XGBRegressor(
-            n_estimators=500,  # Увеличиваем количество деревьев
-            max_depth=8,
-            learning_rate=0.01,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            objective='reg:quantileerror',
-            quantile_alpha=0.9,  # 90-й перцентиль
-            n_jobs=-1  # Используем все ядра CPU
-        )
-        self.memory_model = xgb.XGBRegressor(
-            n_estimators=500,
-            max_depth=8,
-            learning_rate=0.01,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            objective='reg:quantileerror',
-            quantile_alpha=0.9,
-            n_jobs=-1  # Используем все ядра CPU
-        )
         self.cluster_metrics = cluster_metrics
+        self.cpu_model = xgb.XGBRegressor()
+        self.memory_model = xgb.XGBRegressor()
         self._cpu_fitted = False
         self._memory_fitted = False
 
