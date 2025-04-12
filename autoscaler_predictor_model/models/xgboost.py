@@ -73,9 +73,10 @@ class XGBoostModel:
 
     def _create_features(self, df):
         df = df.copy()
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['minute'] = df['timestamp'].dt.minute
         df['hour'] = df['timestamp'].dt.hour
         df['day_of_week'] = df['timestamp'].dt.dayofweek
+        df['day_of_month'] = df['timestamp'].dt.day
         df['month'] = df['timestamp'].dt.month
-        df['is_weekend'] = df['day_of_week'] >= 5
-        df['minutes_since_midnight'] = df['timestamp'].dt.hour * 60 + df['timestamp'].dt.minute
-        return df[['hour', 'day_of_week', 'month', 'is_weekend', 'minutes_since_midnight']]
+        return df[['minute', 'hour', 'day_of_week', 'day_of_month', 'month']]

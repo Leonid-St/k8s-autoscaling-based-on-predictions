@@ -7,7 +7,7 @@ import logging
 from typing import List, Callable, Awaitable
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
 
 class TeacherService:

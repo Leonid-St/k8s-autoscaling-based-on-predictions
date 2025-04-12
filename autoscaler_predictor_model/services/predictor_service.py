@@ -5,7 +5,7 @@ import logging
 from models.xgboost import XGBoostModel
 from storage.storage_service import StorageService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
 
 class PredictorService:
@@ -24,40 +24,26 @@ class PredictorService:
             await observer()
 
     async def on_model_updated(self):
-        self.update_count += 1
-        if self.update_count >= 5:
-            await self._make_predictions()
-            self.update_count = 0
+        await self._make_predictions()
 
     async def _make_predictions(self):
         try:
-            # Получаем текущее время
             now = datetime.now()
+            prediction_time = now + timedelta(minutes=1)
 
-            # Генерируем временные метки для предсказаний (5 минут вперед)
-            prediction_times = [now + timedelta(minutes=i) for i in range(1, 6)]
+            prediction = self.model.predict(prediction_time)
 
-            # Выполняем предсказания
-            predictions = []
-            for timestamp in prediction_times:
-                prediction = self.model.predict(timestamp)
-                predictions.append({
-                    'timestamp': timestamp,
+            await self.storage.save_prediction(
+                timestamp=prediction_time,
+                node=self.node_id,
+                model_type='xgboost',
+                prediction={
+                    'timestamp': prediction_time,
                     'cpu': prediction['cpu'],
                     'memory': prediction.get('memory', 0)
-                })
-
-            # Сохраняем предсказания в хранилище
-            for prediction in predictions:
-                await self.storage.save_prediction(
-                    timestamp=prediction['timestamp'],
-                    node=self.node_id,
-                    model_type='xgboost',
-                    prediction=prediction
-                )
-
-            logger.info(f"Predictions saved for node {self.node_id}")
+                }
+            )
+            logger.info(f"Prediction saved for node {self.node_id}")
             await self._notify_observers()
-
         except Exception as e:
-            logger.error(f"Error making predictions: {e}")
+            logger.error(f"Error making prediction: {e}")

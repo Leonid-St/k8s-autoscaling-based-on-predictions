@@ -501,6 +501,10 @@ async def lifespan(app: FastAPI):
     scheduler.start()
 
     yield
+
+    # Закрытие соединения с базой данных
+    if hasattr(storage, 'conn') and not storage.conn.closed:
+        storage.conn.close()
     scheduler.shutdown()
 
 

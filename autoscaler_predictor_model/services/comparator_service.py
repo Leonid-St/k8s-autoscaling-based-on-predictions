@@ -4,7 +4,8 @@ import numpy as np
 from storage.storage_service import StorageService
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
+
 
 class ComparatorService:
     def __init__(self, storage: StorageService, node_id: str):
@@ -19,7 +20,7 @@ class ComparatorService:
 
             # Получаем фактические данные за последние 5 минут
             actual_data = await self.storage.get_actual_range(start_time, end_time, self.node_id)
-            
+
             # Получаем предсказания за последние 5 минут
             predicted_data = await self.storage.get_predictions_range(start_time, end_time, self.node_id)
 
@@ -41,7 +42,8 @@ class ComparatorService:
                 )
                 logger.info(f"Errors saved for node {self.node_id} from {start_time} to {end_time}")
             else:
-                logger.warning(f"No actual or predicted data found for node {self.node_id} from {start_time} to {end_time}")
+                logger.warning(
+                    f"No actual or predicted data found for node {self.node_id} from {start_time} to {end_time}")
 
         except Exception as e:
-            logger.error(f"Error comparing and saving errors: {e}") 
+            logger.error(f"Error comparing and saving errors: {e}")
