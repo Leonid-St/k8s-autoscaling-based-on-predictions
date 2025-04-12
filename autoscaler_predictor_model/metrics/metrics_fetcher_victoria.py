@@ -50,7 +50,8 @@ class VictoriaMetricsFetcher(MetricsFetcher):
                 }
 
     async def get_cpu_metrics_1m(self, uuid: str) -> dict[str, float | datetime]:
-        query = f'rate(libvirt_domain_info_cpu_time_seconds_total{{uuid="{uuid}"}}[1m]) * 100 / libvirt_domain_info_virtual_cpus{{uuid="{uuid}"}}'
+        query = (f'rate(libvirt_domain_info_cpu_time_seconds_total{{uuid="{uuid}"}}[1m]) * 100 / '
+                 f'libvirt_domain_info_virtual_cpus{{uuid="{uuid}"}}')
         return await self._query(query=query)
 
     async def get_memory_metrics_1m(self, uuid: str) -> dict[str, float | datetime]:
@@ -58,7 +59,7 @@ class VictoriaMetricsFetcher(MetricsFetcher):
         memory_query = f'rate(libvirt_domain_memory_stats_used_percent{{uuid="{uuid}"}}[1m])'
         return await self._query(query=memory_query)
 
-    async def get_cpu_memory_metrics_1m(self, uuid: str):
+    async def get_cpu_memory_metrics_1m(self, uuid: str) -> dict:
         cpu = await self.get_cpu_metrics_1m(uuid)
         memory = await self.get_memory_metrics_1m(uuid)
         logger.info("metric fetched for: " + uuid)

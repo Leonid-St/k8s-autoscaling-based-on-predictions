@@ -1,6 +1,11 @@
+from abc import ABC
+
 import psycopg2
 import pandas as pd
 from datetime import datetime
+
+from models.errors_metrics import ErrorsMetrics
+from models.metric_data import MetricData
 from storage.storage_service import StorageService
 import logging
 import uvicorn
@@ -13,6 +18,10 @@ def get_valid_table_name(uuid: str, table_type: str) -> str:
 
 
 class PostgresStorage(StorageService):
+    async def get_errors(self, *, start_date: datetime, end_date: datetime, node: str = None, model_type: str = None,
+                         error_metrics: dict) -> MetricData | None:
+        pass
+
     def __init__(self, db_config):
         self.db_config = db_config
         self.conn = self._get_connection()
@@ -101,12 +110,16 @@ class PostgresStorage(StorageService):
                 self.predicted_table_created = True
             elif table_type == "error":
                 cur.execute(f"""
-                    CREATE TABLE IF NOT EXISTS {table_name} (
-                        timestamp TIMESTAMPTZ PRIMARY KEY,
-                        end_time TIMESTAMPTZ,
-                        mse FLOAT,
-                        mae FLOAT
-                    )
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    timestamp TIMESTAMPTZ PRIMARY KEY,
+                    end_time TIMESTAMPTZ,
+                    cpu_mse FLOAT,
+                    cpu_mae FLOAT,
+                    cpu_rmse FLOAT,
+                    memory_mse FLOAT,
+                    memory_mae FLOAT,
+                    memory_rmse FLOAT
+                )
                 """)
                 self.error_table_created = False
             cur.execute(f"""
@@ -115,7 +128,11 @@ class PostgresStorage(StorageService):
             self.conn.commit()
             logger.info("table was created with table_name:" + table_name)
 
-    async def save_prediction(self, timestamp: datetime, node: str, model_type: str, prediction: dict):
+    async def save_prediction(self, *,
+                              timestamp: datetime,
+                              node: str,
+                              prediction: dict,
+                              ):
         table_name = get_valid_table_name(node, "predicted")
         if not self.predicted_table_created:
             await self._create_table_if_not_exists(table_name, "predicted")
@@ -133,7 +150,7 @@ class PostgresStorage(StorageService):
                 raise
         logger.info("metric predicted saved in postgres for: " + node)
 
-    async def save_actual(self, *, node: str, metrics: dict):
+    async def save_actual(self, *, node: str, metrics: MetricData):
         self._ensure_connection()
         table_name = get_valid_table_name(node, "actual")
         if not self.actual_table_created:
@@ -144,9 +161,9 @@ class PostgresStorage(StorageService):
                 cur.execute(f"""
                     INSERT INTO {table_name} (timestamp, actual_cpu, actual_memory)
                     VALUES (%s, %s, %s)
-                """, (metrics.get('timestamp'),
-                      float(metrics.get('cpu')),
-                      float(metrics.get('memory'))
+                """, (metrics.timestamp,
+                      float(metrics.metrics.get('cpu')),
+                      float(metrics.metrics.get('memory'))
                       ))
                 self.conn.commit()
             except Exception as e:
@@ -155,16 +172,36 @@ class PostgresStorage(StorageService):
                 raise
         logger.info("metric actual saved in postgres for: " + node)
 
-    async def save_error(self, timestamp: datetime, node: str, model_type: str, error_metrics: dict):
+    async def save_error(self, *,
+                         node: str,
+                         error_metrics: ErrorsMetrics,
+                         ):
         table_name = get_valid_table_name(node, "error")
         if not self.error_table_created:
             await self._create_table_if_not_exists(table_name, "error")
         with self.conn.cursor() as cur:
             try:
                 cur.execute(f"""
-                    INSERT INTO {table_name} (timestamp, mse, mae)
-                    VALUES (%s, %s, %s)
-                """, (timestamp, float(error_metrics.get('mse')), float(error_metrics.get('mae'))))
+                    INSERT INTO {table_name} (
+                        timestamp,
+                        end_time,
+                        cpu_mse ,
+                        cpu_mae, 
+                        cpu_rmse, 
+                        memory_mse, 
+                        memory_mae, 
+                        memory_rmse )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    error_metrics.start_time,
+                    error_metrics.end_time,
+                    error_metrics.cpu.mse,
+                    error_metrics.cpu.mae,
+                    error_metrics.cpu.rmse,
+                    error_metrics.memory.mse,
+                    error_metrics.memory.mae,
+                    error_metrics.memory.rmse
+                ))
                 self.conn.commit()
             except Exception as e:
                 self.conn.rollback()
@@ -172,88 +209,100 @@ class PostgresStorage(StorageService):
                 raise
         logger.info("metric error saved in postgres for: " + node)
 
-    async def get_predictions(self, start_date: datetime, end_date: datetime, node: str = None,
-                              model_type: str = None) -> pd.DataFrame:
+    async def get_prediction(self, *,
+                             timestamp: datetime,
+                             node: str = None,
+                             model_type: str = None) -> MetricData | None:
         if not node:
             raise ValueError("Node must be specified")
 
-        table_name = get_valid_table_name(node, "predicted")
-        query = f"""
-            SELECT timestamp, predicted_cpu, predicted_memory
-            FROM {table_name}
-            WHERE timestamp BETWEEN %s AND %s
-        """
-        params = [start_date, end_date]
-
-        return pd.read_sql(query, self.conn, params=params)
-
-    async def get_actual(self, node: str) -> dict:
-        table_name = get_valid_table_name(node, "actual")
-        with self.conn.cursor() as cur:
-            cur.execute(f"""
-                SELECT timestamp, actual_cpu, actual_memory
-                FROM {table_name}
-                ORDER BY timestamp DESC
-                LIMIT 1
-            """)
-            result = cur.fetchone()
-            if result:
-                return {
-                    'timestamp': result[0],
-                    'cpu': result[1],
-                    'memory': result[2]
-                }
-            return {}
-
-    def get_errors(self, start_date: datetime, end_date: datetime, node: str = None,
-                   model_type: str = None) -> pd.DataFrame:
-        if not node:
-            raise ValueError("Node must be specified")
-
-        table_name = get_valid_table_name(node, "error")
-        query = f"""
-            SELECT timestamp, mse, mae
-            FROM {table_name}
-            WHERE timestamp BETWEEN %s AND %s
-        """
-        params = [start_date, end_date]
-
-        return pd.read_sql(query, self.conn, params=params)
-
-    async def get_actual_range(self, start_time: datetime, end_time: datetime, node: str) -> pd.DataFrame:
-        table_name = get_valid_table_name(node, "actual")
-        with self.conn.cursor() as cur:
-            cur.execute(f"""
-                SELECT timestamp, actual_cpu, actual_memory
-                FROM {table_name}
-                WHERE timestamp BETWEEN %s AND %s
-            """, (start_time, end_time))
-            results = cur.fetchall()
-            if results:
-                return pd.DataFrame(results, columns=['timestamp', 'cpu', 'memory'])
-            return pd.DataFrame()
-
-    async def get_predictions_range(self, start_time: datetime, end_time: datetime, node: str) -> pd.DataFrame:
         table_name = get_valid_table_name(node, "predicted")
         with self.conn.cursor() as cur:
             cur.execute(f"""
                 SELECT timestamp, predicted_cpu, predicted_memory
                 FROM {table_name}
-                WHERE timestamp BETWEEN %s AND %s
-            """, (start_time, end_time))
-            results = cur.fetchall()
-            if results:
-                return pd.DataFrame(results, columns=['timestamp', 'cpu', 'memory'])
-            return pd.DataFrame()
+                WHERE timestamp = %s
+            """, (timestamp,))
+            result = cur.fetchone()
+            if result:
+                return MetricData(timestamp=result[0], metrics={'cpu': result[1], 'memory': result[2]})
+            return None
 
-    async def save_error(self, *, start_time: datetime, end_time: datetime, node: str, model_type: str,
-                         error_metrics: dict):
-        table_name = get_valid_table_name(node, "error")
-        await self._create_table_if_not_exists(table_name, "error")
-
+    async def get_actual(self, *,
+                         node: str,
+                         timestamp: datetime,
+                         ) -> MetricData | None:
+        table_name = get_valid_table_name(node, "actual")
         with self.conn.cursor() as cur:
             cur.execute(f"""
-                INSERT INTO {table_name} (timestamp, end_time, mse, mae)
-                VALUES (%s, %s, %s, %s)
-            """, (start_time, end_time, error_metrics.get('rmse'), error_metrics.get('mae')))
-            self.conn.commit()
+                SELECT timestamp, actual_cpu, actual_memory
+                FROM {table_name}
+                WHERE timestamp = %s
+            """, (timestamp,))
+            result = cur.fetchone()
+            if result:
+                return MetricData(timestamp=result[0], metrics={'cpu': result[1], 'memory': result[2]})
+            return None
+
+    # def get_errors(self,*, start_date: datetime,
+    #                end_date: datetime,
+    #                node: str = None,
+    #                model_type: str = None,
+    #                ) -> pd.DataFrame:
+    #     if not node:
+    #         raise ValueError("Node must be specified")
+    #
+    #     table_name = get_valid_table_name(node, "error")
+    #     query = f"""
+    #         SELECT timestamp, mse, mae
+    #         FROM {table_name}
+    #         WHERE timestamp BETWEEN %s AND %s
+    #     """
+    #     params = [start_date, end_date]
+    #
+    #     return pd.read_sql(query, self.conn, params=params)
+
+    # async def get_actual_range(self,*, start_time: datetime,
+    #                            end_time: datetime,
+    #                            node: str,
+    #                            ) -> pd.DataFrame:
+    #     table_name = get_valid_table_name(node, "actual")
+    #     with self.conn.cursor() as cur:
+    #         cur.execute(f"""
+    #             SELECT timestamp, actual_cpu, actual_memory
+    #             FROM {table_name}
+    #             WHERE timestamp BETWEEN %s AND %s
+    #         """, (start_time, end_time))
+    #         results = cur.fetchall()
+    #         if results:
+    #             return pd.DataFrame(results, columns=['timestamp', 'cpu', 'memory'])
+    #         return pd.DataFrame()
+
+    # async def get_predictions_range(self,*, start_time: datetime, end_time: datetime, node: str) -> pd.DataFrame:
+    #     table_name = get_valid_table_name(node, "predicted")
+    #     with self.conn.cursor() as cur:
+    #         cur.execute(f"""
+    #             SELECT timestamp, predicted_cpu, predicted_memory
+    #             FROM {table_name}
+    #             WHERE timestamp BETWEEN %s AND %s
+    #         """, (start_time, end_time))
+    #         results = cur.fetchall()
+    #         if results:
+    #             return pd.DataFrame(results, columns=['timestamp', 'cpu', 'memory'])
+    #         return pd.DataFrame()
+
+    # async def save_error(self, *,
+    #                      start_time: datetime,
+    #                      end_time: datetime,
+    #                      node: str,
+    #                      model_type: str,
+    #                      error_metrics: dict):
+    #     table_name = get_valid_table_name(node, "error")
+    #     await self._create_table_if_not_exists(table_name, "error")
+    #
+    #     with self.conn.cursor() as cur:
+    #         cur.execute(f"""
+    #             INSERT INTO {table_name} (timestamp, end_time, mse, mae)
+    #             VALUES (%s, %s, %s, %s)
+    #         """, (start_time, end_time, error_metrics.get('rmse'), error_metrics.get('mae')))
+    #         self.conn.commit()

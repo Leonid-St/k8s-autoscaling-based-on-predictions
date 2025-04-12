@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import aiohttp
 
+
 class MetricsFetcher(ABC):
     @abstractmethod
     async def get_cpu_metrics_1m(self, uuid: str) -> pd.DataFrame:
@@ -26,15 +27,15 @@ class MetricsFetcher(ABC):
 #             "end": end_time.timestamp(),
 #             "step": step
 #         }
-        
+
 #         async with aiohttp.ClientSession() as session:
 #             async with session.get(f"{self.base_url}/api/v1/query_range", params=params) as response:
 #                 response.raise_for_status()
 #                 data = await response.json()
-                
+
 #                 if data["status"] != "success":
 #                     raise ValueError(f"Query failed: {data.get('error', 'Unknown error')}")
-                
+
 #                 records = []
 #                 for result in data["data"]["result"]:
 #                     for value in result["values"]:
@@ -44,7 +45,7 @@ class MetricsFetcher(ABC):
 #                             "timestamp": timestamp,
 #                             "value": metric_value
 #                         })
-                
+
 #                 return pd.DataFrame(records)
 
 #     async def get_cpu_metrics_1m(self, uuid: str) -> pd.DataFrame:
