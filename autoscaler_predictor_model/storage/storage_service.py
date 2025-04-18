@@ -41,3 +41,7 @@ class StorageService(ABC):
                          error_metrics: dict,
                          ) -> MetricData | None:
         pass
+
+    @abstractmethod
+    async def get_latest_prediction(self, *, node: str) -> MetricData | None:
+        pass

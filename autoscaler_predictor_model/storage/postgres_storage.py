@@ -3,6 +3,8 @@ from abc import ABC
 import psycopg2
 import pandas as pd
 from datetime import datetime
+import json
+from sqlalchemy import text
 
 from models.errors_metrics import ErrorsMetrics
 from models.metric_data import MetricData
@@ -21,6 +23,8 @@ class PostgresStorage(StorageService):
     async def get_errors(self, *, start_date: datetime, end_date: datetime, node: str = None, model_type: str = None,
                          error_metrics: dict) -> MetricData | None:
         pass
+
+
 
     def __init__(self, db_config):
         self.db_config = db_config
@@ -227,7 +231,33 @@ class PostgresStorage(StorageService):
             if result:
                 return MetricData(timestamp=result[0], metrics={'cpu': result[1], 'memory': result[2]})
             return None
+        
 
+    async def get_latest_prediction(self, *, node: str) -> MetricData | None:
+        """
+        Получает последнее предсказание для указанной ноды из базы данных.
+        """
+        async with self.engine.begin() as conn:
+            result = await conn.execute(
+                text("""
+                    SELECT timestamp, prediction
+                    FROM predictions
+                    WHERE node_id = :node_id
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                """),
+                {"node_id": node}
+            )
+            row = result.fetchone()
+            if row:
+                timestamp, prediction_json = row
+                prediction_data = json.loads(prediction_json)
+                metrics = {
+                    'cpu': prediction_data.get('cpu'),
+                    'memory': prediction_data.get('memory')
+                }
+                return MetricData(timestamp=timestamp, metrics=metrics)
+            return None
     async def get_actual(self, *,
                          node: str,
                          timestamp: datetime,

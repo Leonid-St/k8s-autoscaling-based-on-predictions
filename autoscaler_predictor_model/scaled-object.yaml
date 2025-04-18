@@ -1,43 +1,63 @@
-apiVersion: keda.sh/v1alpha1
-kind: ScaledObject
-metadata:
-  name: polynomial-scaler
-spec:
-  scaleTargetRef:
-    name: your-deployment
-  triggers:
-  - type: external-push
-    metadata:
-      scalerAddress: "autoscaler-service:5001"
-      url: "http://autoscaler-service:5001/metrics/polynomial"
-      threshold: "80"
+# apiVersion: keda.sh/v1alpha1
+# kind: ScaledObject
+# metadata:
+#   name: polynomial-scaler
+# spec:
+#   scaleTargetRef:
+#     name: your-deployment
+#   triggers:
+#   - type: external-push
+#     metadata:
+#       scalerAddress: "autoscaler-service:5001"
+#       url: "http://autoscaler-service:5001/metrics/polynomial"
+#       threshold: "80"
+
+---
+# apiVersion: keda.sh/v1alpha1
+# kind: ScaledObject
+# metadata:
+#   name: xgboost-scaler
+# spec:
+#   scaleTargetRef:
+#     name: your-deployment
+#   pollingInterval: 5
+#   triggers:
+#   - type: http
+#     metadata:
+#       url: "http://autoscaler-service:5000/keda-metrics"
+#       threshold: "-100"
+#       responseValuePath: "cpu"
+
+---
+# apiVersion: keda.sh/v1alpha1
+# kind: ScaledObject
+# metadata:
+#   name: sarima-scaler
+# spec:
+#   scaleTargetRef:
+#     name: your-deployment
+#   triggers:
+#   - type: external-push
+#     metadata:
+#       scalerAddress: "autoscaler-service:5001"
+#       url: "http://autoscaler-service:5001/metrics/sarima"
+#       threshold: "85"
 
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-  name: xgboost-scaler
+  name: xgboost-scaler-push
 spec:
   scaleTargetRef:
     name: your-deployment
+  minReplicaCount: 1 #  Минимум 1 реплика
+  idleReplicaCount: 1 #  В режиме ожидания 1 реплика
+  scaleDownDelay: 5 #  Задержка перед масштабированием вниз 5 минут
   triggers:
   - type: external-push
     metadata:
-      scalerAddress: "autoscaler-service:5001"
-      url: "http://autoscaler-service:5001/metrics/xgboost"
-      threshold: "75"
-
----
-apiVersion: keda.sh/v1alpha1
-kind: ScaledObject
-metadata:
-  name: sarima-scaler
-spec:
-  scaleTargetRef:
-    name: your-deployment
-  triggers:
-  - type: external-push
-    metadata:
-      scalerAddress: "autoscaler-service:5001"
-      url: "http://autoscaler-service:5001/metrics/sarima"
-      threshold: "85"
+      scalerAddress: "http://autoscaler-service:5001"
+      url: "/push"
+      threshold: "95"
+      metricName: "cpu" 

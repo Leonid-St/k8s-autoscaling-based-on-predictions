@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 import requests
 from datetime import datetime, timedelta
 import warnings
@@ -25,6 +25,8 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 from services.comparator_service import ComparatorService
+from fastapi.responses import JSONResponse
+from services.scaler_service import ScalerService
 
 # MODEL_PATH = '/app/models/'
 
@@ -445,6 +447,7 @@ from pytz import utc
 scheduler = AsyncIOScheduler(timezone=utc)
 
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Инициализация конфигурации
@@ -498,6 +501,15 @@ async def lifespan(app: FastAPI):
     predictor_service.add_observer(comparator_service.compare_and_save_errors)
 
     scheduler.add_job(collector.collect, 'interval', seconds=60)
+
+    # Инициализация ScalerService
+    scaler_service = ScalerService(
+        storage=storage,
+        node_id=env_config.uuid_node,
+        keda_scaler_address="http://autoscaler-service:5001"
+    )
+    scheduler.add_job(scaler_service.scale, 'interval', minutes=1)
+
     scheduler.start()
 
     yield
@@ -513,39 +525,46 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("uvicorn.error")
 
-    # scheduler.add_job(collector.collect, 'interval', seconds=60)
 
     app = FastAPI(lifespan=lifespan)
 
-    # scheduler.start()
-    # asyncio.run(collector.collect())
-    # Инициализация конфигурации
-    # config_ini = ConfigParser()
-    # config_ini.read('config.ini')
 
-    # # Добавить в конфиг
-    # PROMETHEUS_URL = config_ini.get('PROMETHEUS', 'Url')
-    # CPU_QUERY = config_ini.get('PROMETHEUS', 'CpuQuery')
-    # MEMORY_QUERY = config_ini.get('PROMETHEUS', 'MemoryQuery')
+async def get_predictor_service() -> PredictorService:
+    env_config = EnvConfig()
+    storage = StorageFactory.create_storage(env_config)
+    models = {
+        'xgboost': XGBoostModel(),
+        'sarima': SARIMAModel(data_retention='4H'),
+        'polynomial': PolynomialModel()
+    }
+    return PredictorService(
+        model=models['xgboost'],
+        storage=storage,
+        node_id=env_config.uuid_node
+    )
 
-    # # Инициализация после других глобальных переменных
-    # metrics_comparator = MetricsComparator(data_retention='8670H')  # Например, для хранения данных за последние 365 days * 24 hours
-    # metrics_storage = MetricsStorage(storage_path='./metrics_data', retention_period=timedelta(days=365))
 
-    # # Инициализация сервисов
-    # prediction_service = PredictionService(models['xgboost'], storage)
-    # error_service = ErrorCalculationService(storage)
+async def get_storage_service() -> StorageService:
+    env_config = EnvConfig()
+    return StorageFactory.create_storage(env_config)
 
-    # Задача для обучения модели
-    # async def train_model():
-    #     await model_trainer.train_model()
 
-    # # Планировщик
-    # scheduler = AsyncIOScheduler()
-    # scheduler.add_job(collect_metrics, 'interval', minutes=1)
-    # scheduler.add_job(train_model, 'interval', minutes=1)
-    # scheduler.start()
-    # Execution will block here until Ctrl+C (Ctrl+Break on Windows) is pressed.
+@app.get("/keda-metrics")
+async def keda_metrics(storage_service: StorageService = Depends(get_storage_service)):
+    """
+    Endpoint для Keda, возвращает последнее предсказанное значение CPU из базы данных.
+    """
+    latest_prediction = await storage_service.get_prediction(
+        node=EnvConfig().uuid_node,
+        timestamp=datetime.now()
+    )
 
-    uvicorn.run(app, host="0.0.0.0", port=5000, log_level="trace")
-    # Execution will block here until Ctrl+C (Ctrl+Break on Windows) is pressed.
+    if latest_prediction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Предсказания не найдены")
+
+    cpu_prediction = latest_prediction.metrics.get('cpu')
+
+    if cpu_prediction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CPU предсказание не найдено")
+
+    return JSONResponse({"cpu": cpu_prediction})
