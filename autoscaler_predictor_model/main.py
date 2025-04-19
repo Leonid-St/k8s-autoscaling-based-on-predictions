@@ -13,6 +13,7 @@ from metrics.metrics_collector import MetricsCollector
 from config import EnvConfig
 from metrics.metrics_fetcher import MetricsFetcher
 from metrics.metrics_fetcher_victoria import VictoriaMetricsFetcher
+from metrics.metrics_fetcher_local_test import MetricsFetcherLocalTest
 from models.sarima import SARIMAModel
 from models.xgboost import XGBoostModel
 from services.predictor_service import PredictorService
@@ -447,7 +448,6 @@ from pytz import utc
 scheduler = AsyncIOScheduler(timezone=utc)
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Инициализация конфигурации
@@ -457,7 +457,15 @@ async def lifespan(app: FastAPI):
     storage = StorageFactory.create_storage(env_config)
 
     # 1 - fetch metrics
-    fetcher = VictoriaMetricsFetcher(env_config.url_for_metrics)
+    use_local_fetcher = os.getenv("USE_LOCAL_FETCHER", "false").lower() == "true"
+
+    if use_local_fetcher:
+        fetcher = MetricsFetcherLocalTest()
+        print("Using MetricsFetcherLocalTest for local testing")
+    else:
+        fetcher = VictoriaMetricsFetcher(env_config.url_for_metrics)
+        print("Using VictoriaMetricsFetcher for production/dev")
+
 
     collector = MetricsCollector(
         uuid=env_config.uuid_node,
@@ -524,7 +532,6 @@ if __name__ == "__main__":
     import logging
 
     logger = logging.getLogger("uvicorn.error")
-
 
     app = FastAPI(lifespan=lifespan)
 

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 2 #  Начнем с 2 реплик
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+      - name: nginx-vts-exporter
+        image: nginx/nginx-prometheus-exporter:0.11.0 #  Используйте актуальную версию
+        ports:
+        - containerPort: 9113 #  Порт для Prometheus метрик 

@@ -1,0 +1,15 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: nginx-scaledobject-external-push
+spec:
+  scaleTargetRef:
+    name: nginx-deployment
+  pollingInterval: 5
+  triggers:
+  - type: external-push
+    metadata:
+      scalerAddress: http://autoscaler-service.default.svc.cluster.local:8000 #  Укажите адрес вашего autoscaler service. Замените autoscaler-service на имя вашего сервиса и namespace, если необходимо. Порт 8000 - пример, используйте порт вашего приложения.
+      url: "/push" #  Endpoint на вашем autoscaler service, который Keda будет опрашивать для получения адреса push scaler.
+      threshold: "100" #  Порог CPU, при котором Keda будет масштабировать приложение.
+      metricName: "cpu" #  Имя метрики, которую вы будете отправлять.

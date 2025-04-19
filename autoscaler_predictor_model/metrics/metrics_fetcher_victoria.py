@@ -68,3 +68,22 @@ class VictoriaMetricsFetcher(MetricsFetcher):
             "cpu": cpu["value"],
             "memory": memory["value"],
         }
+
+    async def get_cpu_metrics_app(self, app: str) -> dict[str, float | datetime]:
+        query = f'avg(rate(libvirt_domain_info_cpu_time_seconds_total{{app="{app}"}}[1m]) * 100 / libvirt_domain_info_virtual_cpus{{app="{app}"}})'
+        return await self._query(query=query)
+
+    async def get_memory_metrics_app(self, app: str) -> dict[str, float | datetime]:
+        # Замените на соответствующий запрос для памяти
+        memory_query = f'rate(libvirt_domain_memory_stats_used_percent{{app="{app}"}}[1m])'
+        return await self._query(query=memory_query)
+
+    async def get_cpu_memory_metrics_app(self, app: str) -> dict:
+        cpu = await self.get_cpu_metrics_app(app)
+        memory = await self.get_memory_metrics_app(app)
+        logger.info("metric fetched for: " + app)
+        return {
+            "timestamp": cpu["timestamp"],
+            "cpu": cpu["value"],
+            "memory": memory["value"],
+        }
