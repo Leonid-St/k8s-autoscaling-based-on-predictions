@@ -100,13 +100,20 @@ helm repo update
 
 helm install kube-state-metrics prometheus-community/kube-state-metrics
 ```
+### installing prometheus-node-exporter
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install node-exporter prometheus-community/prometheus-node-exporter
+```
 
 <!-- ### deploy cadvisior:
 ```bash
 kubectl apply -f cadvisior.yaml
-```
+``` -->
 
-### deploy vectoria metrics -->
+## deploy vectoria metrics
 
 ```bash
 kubectl apply -f victoria-metrics.yaml
@@ -120,9 +127,18 @@ ssh -L 8428:192.168.49.2:30000 ubuntu@45.147.163.92
 
 ### deploy vectoria metrics agent
 ```bash
+helm repo add victoria-metrics https://victoriametrics.github.io/helm-charts/
+helm repo update
+
+helm upgrade --install vmagent victoria-metrics/victoria-metrics-agent \
+  --namespace default --create-namespace \
+  -f vmagent-values.yaml
+```
+
+<!-- ```bash
 kubectl apply -f vmagent-config.yaml
 kubectl apply -f vmagent-deployment.yaml
-```
+``` -->
 
 #### это UI VictoriaMetrics
 ```bash
