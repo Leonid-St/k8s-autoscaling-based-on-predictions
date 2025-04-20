@@ -9,14 +9,14 @@ class MetricsFetcherLocalTest(MetricsFetcher):
         await asyncio.sleep(0.1)  #  Имитация задержки запроса
         return {
             "timestamp": datetime.now(),
-            "value": random.uniform(10, 90)  #  Случайное значение CPU от 10% до 90%
+            "value": random.uniform(10, 100)  #  Случайное значение CPU от 10% до 90%
         }
 
     async def get_memory_metrics_1m(self, uuid: str) -> dict[str, float | datetime]:
         await asyncio.sleep(0.1)  #  Имитация задержки запроса
         return {
             "timestamp": datetime.now(),
-            "value": random.uniform(20, 80)  #  Случайное значение memory от 20% до 80%
+            "value": random.uniform(20, 100)  #  Случайное значение memory от 20% до 80%
         }
 
     async def get_cpu_memory_metrics_1m(self, uuid: str) -> dict:

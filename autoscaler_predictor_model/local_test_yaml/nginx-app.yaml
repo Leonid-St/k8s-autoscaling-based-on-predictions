@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: nginx-deployment
 spec:
-  replicas: 2 #  Начнем с 2 реплик
+  replicas: 1 #  Начнем с 1 реплик
   selector:
     matchLabels:
       app: nginx-app

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: default  # Убедитесь, что используете правильный namespace
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        server {
+            listen 80;
+
+            location /stub_status {
+                stub_status on;
+                allow all;# allow 127.0.0.1;  # Разрешите доступ только с локального хоста
+                # deny all;         # Запретите доступ всем остальным
+            }
+
+            location / {
+                return 200 'Hello, World!';  # Возвращает статус 200 с текстом 'Hello, World!'
+                add_header Content-Type text/plain;  # Устанавливает заголовок Content-Type
+            }
+        }
+    }
+

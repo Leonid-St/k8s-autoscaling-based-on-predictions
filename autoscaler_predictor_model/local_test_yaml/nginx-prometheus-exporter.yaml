@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-prometheus-exporter
+  labels:
+    app: nginx-prometheus-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-prometheus-exporter
+  template:
+    metadata:
+      labels:
+        app: nginx-prometheus-exporter
+    spec:
+      containers:
+        - name: nginx-exporter
+          image: nginx/nginx-prometheus-exporter:1.4.1
+          args:
+            - --nginx.scrape-uri=http://simple-app:80/stub_status
+          ports:
+            - containerPort: 9113
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-prometheus-exporter
+  labels:
+    app: nginx-prometheus-exporter
+spec:
+  selector:
+    app: nginx-prometheus-exporter
+  ports:
+    - port: 9113
+      targetPort: 9113
+      protocol: TCP

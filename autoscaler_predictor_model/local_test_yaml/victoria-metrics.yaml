@@ -1,32 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: victoria-metrics-vmselect
+  name: victoria-metrics-single
 spec:
   selector:
     matchLabels:
-      app: victoria-metrics-vmselect
+      app: victoria-metrics-single
   replicas: 1
   template:
     metadata:
       labels:
-        app: victoria-metrics-vmselect
+        app: victoria-metrics-single
     spec:
       containers:
-      - name: vmselect
-        image: victoriametrics/vmselect:v1.99.0-cluster #  Используйте актуальную версию
+      - name: victoria-metrics
+        image: victoriametrics/victoria-metrics:v1.99.0 #  Используйте актуальную версию
         ports:
-        - containerPort: 8481
+        - containerPort: 8428 #  Порт для приема и запросов
           name: http
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: victoria-metrics-vmselect
+  name: victoria-metrics-single
 spec:
+  type: NodePort  
   selector:
-    app: victoria-metrics-vmselect
+    app: victoria-metrics-single
   ports:
   - protocol: TCP
-    port: 8481
-    targetPort: 8481 
+    port: 8428        # Порт, на который будет доступен сервис
+    targetPort: 8428  # Порт, на который будет направлен трафик в контейнер
+    nodePort: 30000   # Укажите желаемый порт в диапазоне 30000-32767

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmagent
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vmagent
+  template:
+    metadata:
+      labels:
+        app: vmagent
+    spec:
+      containers:
+      - name: vmagent
+        image: victoriametrics/vmagent:v1.99.0
+        args:
+          - "-promscrape.config=/etc/prometheus/prometheus.yml"
+          - "-remoteWrite.url=http://victoria-metrics-single:8428/api/v1/write"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+      volumes:
+      - name: config-volume
+        configMap:
+          name: vmagent-config
