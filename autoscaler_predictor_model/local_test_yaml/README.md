@@ -93,6 +93,22 @@ kubectl exec -it <nginx-exporter-pod> -- curl http://simple-app/stub_status
 kubectl exec -it <nginx-exporter-pod> -- curl http://localhost:9113/metrics
 ```
 
+
+### install helm
+
+```bash
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+```
+
+```bash
+chmod 700 get_helm.sh
+```
+
+```bash
+./get_helm.sh
+```
+
+
 ### installing kube-state-metrics
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -132,9 +148,29 @@ helm repo update
 
 helm upgrade --install vmagent victoria-metrics/victoria-metrics-agent \
   --namespace default --create-namespace \
-  -f vmagent-values.yaml
+  -f vmagent-true-values.yaml
 ```
 
+#### calculate cpu utilization
+
+```bash
+sum by (instance) (
+  rate(node_cpu_seconds_total{mode=~"user|system|iowait|irq|softirq|steal"}[5m])
+) * 100
+```
+#### calculate memory usage 
+
+```bash
+100 * (
+  1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes
+)
+```
+
+#### calculae count of ready nodes
+
+```bash
+count(kube_node_status_condition{condition="Ready", status="true"})
+```
 <!-- ```bash
 kubectl apply -f vmagent-config.yaml
 kubectl apply -f vmagent-deployment.yaml
@@ -150,20 +186,6 @@ nginx_connections_active
 
 И нажми Execute — если видишь граф или цифры, значит метрики приходят 🎉
 
-
-### install helm
-
-```bash
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-```
-
-```bash
-chmod 700 get_helm.sh
-```
-
-```bash
-./get_helm.sh
-```
 
 ### install keda:
 
