@@ -6,6 +6,8 @@ from fastapi import FastAPI, Depends, HTTPException, status
 import requests
 from datetime import datetime, timedelta
 import warnings
+
+from pydantic import BaseModel
 from urllib3.exceptions import NotOpenSSLWarning
 
 from models.polynomial import PolynomialModel
@@ -75,7 +77,11 @@ async def lifespan(app: FastAPI):
         node_id=env_config.uuid_node
     )
 
+
     # Регистрируем TeacherService как наблюдателя
+
+
+
     collector.add_observer(teacher_service.on_new_data)
 
     # Инициализация PredictorService
@@ -117,12 +123,41 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
+
+async def get_storage_service() -> StorageService:
+    env_config = EnvConfig()
+    return StorageFactory.create_storage(env_config)
+
+
+
+
 if __name__ == "__main__":
     import logging
 
     logger = logging.getLogger("uvicorn.error")
 
     app = FastAPI(lifespan=lifespan)
+
+
+    @app.get("/keda-metrics")
+    async def keda_metrics(storage_service: StorageService = Depends(get_storage_service)):
+        """
+        Endpoint для Keda, возвращает последнее предсказанное значение CPU из базы данных.
+        """
+        latest_prediction = await storage_service.get_prediction(
+            node=EnvConfig().uuid_node,
+            timestamp=datetime.now()
+        )
+
+        if latest_prediction is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Предсказания не найдены")
+
+        cpu_prediction = latest_prediction.metrics.get('cpu')
+
+        if cpu_prediction is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CPU предсказание не найдено")
+
+        return JSONResponse({"cpu": cpu_prediction})
 
 
 async def get_predictor_service() -> PredictorService:
@@ -139,28 +174,3 @@ async def get_predictor_service() -> PredictorService:
         node_id=env_config.uuid_node
     )
 
-
-async def get_storage_service() -> StorageService:
-    env_config = EnvConfig()
-    return StorageFactory.create_storage(env_config)
-
-
-@app.get("/keda-metrics")
-async def keda_metrics(storage_service: StorageService = Depends(get_storage_service)):
-    """
-    Endpoint для Keda, возвращает последнее предсказанное значение CPU из базы данных.
-    """
-    latest_prediction = await storage_service.get_prediction(
-        node=EnvConfig().uuid_node,
-        timestamp=datetime.now()
-    )
-
-    if latest_prediction is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Предсказания не найдены")
-
-    cpu_prediction = latest_prediction.metrics.get('cpu')
-
-    if cpu_prediction is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CPU предсказание не найдено")
-
-    return JSONResponse({"cpu": cpu_prediction})

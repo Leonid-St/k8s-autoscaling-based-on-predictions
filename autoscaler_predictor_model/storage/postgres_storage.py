@@ -24,8 +24,6 @@ class PostgresStorage(StorageService):
                          error_metrics: dict) -> MetricData | None:
         pass
 
-
-
     def __init__(self, db_config):
         self.db_config = db_config
         self.conn = self._get_connection()
@@ -99,7 +97,8 @@ class PostgresStorage(StorageService):
                     CREATE TABLE IF NOT EXISTS {table_name} (
                         timestamp TIMESTAMPTZ PRIMARY KEY,
                         actual_cpu FLOAT,
-                        actual_memory FLOAT
+                        actual_memory FLOAT,
+                        actual_node_count INTEGER
                     )
                 """)
                 self.actual_table_created = True
@@ -163,11 +162,12 @@ class PostgresStorage(StorageService):
         with self.conn.cursor() as cur:
             try:
                 cur.execute(f"""
-                    INSERT INTO {table_name} (timestamp, actual_cpu, actual_memory)
+                    INSERT INTO {table_name} (timestamp, actual_cpu, actual_memory,actual_node_count)
                     VALUES (%s, %s, %s)
                 """, (metrics.timestamp,
                       float(metrics.metrics.get('cpu')),
-                      float(metrics.metrics.get('memory'))
+                      float(metrics.metrics.get('memory')),
+                      int(metrics.metrics.get('node_count'))
                       ))
                 self.conn.commit()
             except Exception as e:
@@ -231,7 +231,6 @@ class PostgresStorage(StorageService):
             if result:
                 return MetricData(timestamp=result[0], metrics={'cpu': result[1], 'memory': result[2]})
             return None
-        
 
     async def get_latest_prediction(self, *, node: str) -> MetricData | None:
         """
@@ -258,6 +257,7 @@ class PostgresStorage(StorageService):
                 }
                 return MetricData(timestamp=timestamp, metrics=metrics)
             return None
+
     async def get_actual(self, *,
                          node: str,
                          timestamp: datetime,

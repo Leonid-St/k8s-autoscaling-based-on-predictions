@@ -22,7 +22,8 @@ class MetricsCollector:
             await observer(metric_data)
 
     async def collect(self):
-        metric = await self.fetcher.get_cpu_memory_metrics_1m(self.uuid)
+        #metric = await self.fetcher.get_cpu_memory_metrics_node_1m(self.uuid)
+        metric = await self.fetcher.get_cpu_memory_metrics_1m()
         metric_data = MetricData(timestamp=metric['timestamp'], metrics=metric)
         await self.storage.save_actual(metrics=metric_data, node=self.uuid)
         await self._notify_observers(metric_data=metric_data)

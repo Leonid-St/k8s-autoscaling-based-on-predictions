@@ -3,20 +3,20 @@ import pandas as pd
 import sys
 import datetime
 
-
-# Кастомный callback для записи времени перед каждым блоком из 500 строк
-class TimeLoggingCallback(xgb.callback.TrainingCallback):
-    def __init__(self, log_file):
-        self.log_file = log_file
-        self.iteration_count = 0
-
-    def after_iteration(self, model, epoch, evals_log):
-        self.iteration_count += 1
-        # Если прошло 500 итераций, записываем время
-        if self.iteration_count % 500 == 0:
-            with open(self.log_file, 'a') as f:
-                f.write(f"\nВремя начала нового блока: {datetime.datetime.now()}\n")
-        return False  # Возвращаем False, чтобы обучение продолжалось
+#
+# # Кастомный callback для записи времени перед каждым блоком из 500 строк
+# class TimeLoggingCallback(xgb.callback.TrainingCallback):
+#     def __init__(self, log_file):
+#         self.log_file = log_file
+#         self.iteration_count = 0
+#
+#     def after_iteration(self, model, epoch, evals_log):
+#         self.iteration_count += 1
+#         # Если прошло 500 итераций, записываем время
+#         if self.iteration_count % 500 == 0:
+#             with open(self.log_file, 'a') as f:
+#                 f.write(f"\nВремя начала нового блока: {datetime.datetime.now()}\n")
+#         return False  # Возвращаем False, чтобы обучение продолжалось
 
 
 class XGBoostModel:
