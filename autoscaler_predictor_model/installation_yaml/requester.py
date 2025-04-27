@@ -2,7 +2,7 @@ import requests
 import time
 
 # Укажите URL вашего сервера Nginx
-url = 'http://localhost:8080'  # Замените на свой URL
+url = 'http://192.168.49.2:30001'  # Замените на свой URL
 
 while True:
     try:
@@ -14,4 +14,4 @@ while True:
     except Exception as e:
         print(f"Ошибка при запросе: {e}")
     
-    time.sleep(5)  # Пауза 5 секунд
+    #time.sleep(1)  # Пауза 5 секунд

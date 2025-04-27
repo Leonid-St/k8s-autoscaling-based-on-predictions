@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoscaler-predictor-model
+spec:
+  replicas: 1 # Количество копий вашего приложения
+  selector:
+    matchLabels:
+      app: autoscaler-predictor-model
+  template:
+    metadata:
+      labels:
+        app: autoscaler-predictor-model
+    spec:
+      containers:
+      - name: app
+        image: leonidusername5432/autoscaler-predictor-model:latest # Укажите ваш образ
+        ports:
+        - containerPort: 5001 # Порт, который слушает ваше приложение
+        envFrom:
+        - configMapRef:
+            name: app-config # Подключаем ConfigMap
+        # - secretRef:
+        #     name: app-secret # Подключаем Secret
+        # Добавьте запросы и лимиты ресурсов для лучшего управления
+        # resources:
+        #   requests:
+        #     cpu: "100m"
+        #     memory: "128Mi"
+        #   limits:
+        #     cpu: "500m"
+        #     memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autoscaler-predictor-model-service
+spec:
+  selector:
+    app: autoscaler-predictor-model # Должен совпадать с меткой в Deployment
+  ports:
+  - protocol: TCP
+    port: 5001 # Порт сервиса
+    targetPort: 5001 # Порт контейнера
+  type: ClusterIP # Или NodePort, LoadBalancer в зависимости от ваших нужд доступа

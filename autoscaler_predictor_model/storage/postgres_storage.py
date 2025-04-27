@@ -98,7 +98,7 @@ class PostgresStorage(StorageService):
                         timestamp TIMESTAMPTZ PRIMARY KEY,
                         actual_cpu FLOAT,
                         actual_memory FLOAT,
-                        actual_node_count INTEGER
+                        actual_pod_count INTEGER
                     )
                 """)
                 self.actual_table_created = True
@@ -107,7 +107,7 @@ class PostgresStorage(StorageService):
                     CREATE TABLE IF NOT EXISTS {table_name} (
                         timestamp TIMESTAMPTZ PRIMARY KEY,
                         predicted_cpu FLOAT,
-                        predicted_memory FLOAT
+                        predicted_memory FLOAT,
                     )
                 """)
                 self.predicted_table_created = True
@@ -162,12 +162,12 @@ class PostgresStorage(StorageService):
         with self.conn.cursor() as cur:
             try:
                 cur.execute(f"""
-                    INSERT INTO {table_name} (timestamp, actual_cpu, actual_memory,actual_node_count)
+                    INSERT INTO {table_name} (timestamp, actual_cpu, actual_memory,actual_pod_count)
                     VALUES (%s, %s, %s)
                 """, (metrics.timestamp,
                       float(metrics.metrics.get('cpu')),
                       float(metrics.metrics.get('memory')),
-                      int(metrics.metrics.get('node_count'))
+                      int(metrics.metrics.get('pod_count'))
                       ))
                 self.conn.commit()
             except Exception as e:
@@ -210,7 +210,6 @@ class PostgresStorage(StorageService):
             except Exception as e:
                 self.conn.rollback()
                 logger.error(f"Error saving error metrics: {e}")
-                raise
         logger.info("metric error saved in postgres for: " + node)
 
     async def get_prediction(self, *,
@@ -232,31 +231,25 @@ class PostgresStorage(StorageService):
                 return MetricData(timestamp=result[0], metrics={'cpu': result[1], 'memory': result[2]})
             return None
 
-    async def get_latest_prediction(self, *, node: str) -> MetricData | None:
+    async def get_latest_prediction(self, *, node: str = None) -> MetricData | None:
         """
         Получает последнее предсказание для указанной ноды из базы данных.
         """
-        async with self.engine.begin() as conn:
-            result = await conn.execute(
-                text("""
-                    SELECT timestamp, prediction
-                    FROM predictions
-                    WHERE node_id = :node_id
-                    ORDER BY timestamp DESC
-                    LIMIT 1
-                """),
-                {"node_id": node}
-            )
-            row = result.fetchone()
-            if row:
-                timestamp, prediction_json = row
-                prediction_data = json.loads(prediction_json)
-                metrics = {
-                    'cpu': prediction_data.get('cpu'),
-                    'memory': prediction_data.get('memory')
-                }
-                return MetricData(timestamp=timestamp, metrics=metrics)
-            return None
+        try:
+            table_name = get_valid_table_name(node, "predicted")
+            with self.conn.cursor() as cur:
+                cur.execute(f"""
+                        SELECT timestamp, predicted_cpu,predicted_memory
+                        FROM {table_name}
+                        ORDER BY timestamp DESC
+                        LIMIT 1"""
+                )
+                result = result.fetchone()
+                if result:
+                    return MetricData(timestamp=result[0], metrics={'cpu': result[1], 'memory': result[2]})
+                return None
+        except Exception as e:
+            logger.error(f"Error getting last predicted error metrics: {e}")
 
     async def get_actual(self, *,
                          node: str,

@@ -1,0 +1,327 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+{{- with .Values.clusterOwnerRefereces }}
+  ownerReferences:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  {{- with (.Values.webhooks).annotations }}
+  annotations:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+webhooks:
+  - name: sgcluster.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgclusters"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgcluster'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgpgconfig.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgpgconfigs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgpgconfig'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgpoolconfig.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgpoolconfigs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgpoolconfig'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sginstanceprofile.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sginstanceprofiles"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sginstanceprofile'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgbackup.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgbackups"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgbackup'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgdistributedlogs.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgdistributedlogs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgdistributedlogs'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgdbops.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgdbops"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgdbops'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgobjectstorage.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgobjectstorages"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgobjectstorage'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgscript.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgscripts"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgscript'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgshardedcluster.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardedclusters"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgshardedcluster'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgshardedbackup.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardedbackups"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgshardedbackup'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgshardeddbops.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardeddbops"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgshardeddbops'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgstream.validating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE", "DELETE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgstreams"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/validation/sgstream'
+        port: {{ .Values.operator.servicePort | default 443 }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+    

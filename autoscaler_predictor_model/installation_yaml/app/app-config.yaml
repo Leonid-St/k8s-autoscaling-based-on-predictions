@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  STORAGE_TYPE: postgres # или influxdb
+  POSTGRES_HOST: predicted.default.svc.cluster.local # Замените на актуальный хост вашей БД
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "ff59-1b1e-4c87-b22"
+  URL_FOR_METRICS: "http://victoria-metrics-single:8428/prometheus"
+

@@ -5,21 +5,26 @@ import aiohttp
 
 
 class MetricsFetcher(ABC):
-    @abstractmethod
-    async def get_cpu_metrics_node_1m(self, uuid: str) -> pd.DataFrame:
-        pass
+    # @abstractmethod
+    # async def get_cpu_metrics_node_1m(self, uuid: str) -> pd.DataFrame:
+    #     pass
 
-    @abstractmethod
-    async def get_memory_metrics_node_1m(self, uuid: str) -> dict:
-        pass
+    # @abstractmethod
+    # async def get_memory_metrics_node_1m(self, uuid: str) -> dict:
+    #     pass
 
-    @abstractmethod
-    async def get_cpu_memory_metrics_node_1m(self, uuid: str) -> dict:
-        pass
+    # @abstractmethod
+    # async def get_cpu_memory_metrics_node_1m(self, uuid: str) -> dict:
+    #     pass
 
+    # @abstractmethod
+    # async def get_cpu_memory_metrics_1m(self) -> dict:
+    #     pass
+    
     @abstractmethod
-    async def get_cpu_memory_metrics_1m(self) -> dict:
+    async def get_cpu_memory_metrics_pod_1m(self) -> dict:
         pass
+    
 # class MetricsFetcher:
 #     def __init__(self, base_url: str):
 #         self.base_url = base_url

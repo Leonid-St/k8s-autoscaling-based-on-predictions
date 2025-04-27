@@ -20,9 +20,9 @@ class VictoriaMetricsFetcher(MetricsFetcher):
             "query": query,
             "step": step
         }
-        base_url = "http://localhost:8428/prometheus"
+        #base_url = "http://victoria-metrics-single:8428/prometheus"
         async with (aiohttp.ClientSession() as session):
-            async with session.get(f"{base_url}/api/v1/query_range", params=params) as response:
+            async with session.get(f"{self.base_url}/api/v1/query_range", params=params) as response:
                 response.raise_for_status()
                 data = await response.json()
 
@@ -81,36 +81,38 @@ class VictoriaMetricsFetcher(MetricsFetcher):
     async def get_memory_metrics_node_1m(self, uuid: str) -> dict[str, float | datetime]:
         memory_query = f'rate(libvirt_domain_memory_stats_used_percent{{uuid="{uuid}"}}[1m])'
         return await self._query_libvirt(query=memory_query)
+        
 
-    async def get_cpu_metrics_1m(self):
-        cpu_utilization_query = ('sum by (instance) (rate(node_cpu_seconds_total{'
-                                 'mode=~"user|system|iowait|irq|softirq|steal"}[1m])) * 100')
+    #    async def get_cpu_memory_metrics_node_1m(self, uuid: str) -> dict:
+    #     cpu = await self.get_cpu_metrics_node_1m(uuid)
+    #     memory = await self.get_memory_metrics_node_1m(uuid)
+    #     logger.info("metric fetched for: " + uuid)
+    #     return {
+    #         "timestamp": cpu["timestamp"],
+    #         "cpu": cpu["value"],
+    #         "memory": memory["value"],
+            
+    #                 }
+
+
+###########
+    async def get_count_pod_metric(self) -> dict[str, Any]:
+        node_count_query = 'count(kube_pod_status_ready{condition="true",pod=~"simple-app-.*"})'
+        return await self._query_(query=node_count_query, step="1m")
+
+    async def get_cpu_metrics_pod_1m(self):
+        cpu_utilization_query = ('avg(   rate(container_cpu_usage_seconds_total{pod=~"simple-app-.*", container!="POD"}[1m]) )  / avg(kube_pod_container_resource_limits{resource="cpu", pod=~"simple-app-.*"})')
         return await self._query_(cpu_utilization_query, step="1m")
 
-    async def get_memory_metrics_1m(self):
-        memory_utilization_query = '100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)'
+    async def get_memory_metrics_pod_1m(self):
+        memory_utilization_query = 'avg( rate(container_memory_usage_bytes{pod=~"simple-app-.*", container!="POD"}[1m]) ) / avg(kube_pod_container_resource_limits{resource="memory", pod=~"simple-app-.*"}) * 100'
         return await self._query_(memory_utilization_query, step="1m")
 
-    async def get_count_pod_metric(self) -> dict[str, Any]:
-        node_count_query = 'count(kube_node_status_condition{condition="Ready", status="true"})'
-        return await self._query_(query=node_count_query, step=None)
+    async def get_cpu_memory_metrics_pod_1m(self, ) -> dict:
 
-    async def get_cpu_memory_metrics_node_1m(self, uuid: str) -> dict:
-        cpu = await self.get_cpu_metrics_node_1m(uuid)
-        memory = await self.get_memory_metrics_node_1m(uuid)
-        logger.info("metric fetched for: " + uuid)
-        return {
-            "timestamp": cpu["timestamp"],
-            "cpu": cpu["value"],
-            "memory": memory["value"],
-        }
-
-    async def get_cpu_memory_metrics_1m(self, ) -> dict:
-        # cpu = await self.get_cpu_metrics_libvirt_for_node_1m(uuid)
-        # memory = await self.get_memory_metrics_libvirt_for_node_1m(uuid)
-        pod_count = await self.get_count_nodes_metric()
-        cpu = await self.get_cpu_metrics_1m()
-        memory = await self.get_memory_metrics_1m()
+        pod_count = await self.get_count_pod_metric()
+        cpu = await self.get_cpu_metrics_pod_1m()
+        memory = await self.get_memory_metrics_pod_1m()
         logger.info("metric fetched ")
         return {
             "timestamp": cpu["timestamp"],

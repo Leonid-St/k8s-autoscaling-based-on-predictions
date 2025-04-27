@@ -274,7 +274,7 @@ Add the TimescaleDB package
 
 Ubuntu
 ```bash
-echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -c -s) main" | sudo tee /etc/apt/sources.list.d/timescaledb.list
+echo "deb https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main" | sudo tee /etc/apt/sources.list.d/timescaledb.list
 ```
 Install the TimescaleDB GPG key
 ```bash

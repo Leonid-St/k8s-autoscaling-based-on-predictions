@@ -1,0 +1,15 @@
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: stackgras-cluster
+spec:
+  instances: 1
+  exposeOptions:
+    method: NodePort
+  postgres:
+    version: 'latest'
+    extensions:
+    - name: timescaledb
+  pods:
+    persistentVolume: 
+      size: '15Gi'

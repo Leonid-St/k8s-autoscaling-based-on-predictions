@@ -56,3 +56,4 @@ aiohttp
 psycopg2-binary
 influxdb_client
 python-dotenv
+sqlalchemy

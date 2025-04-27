@@ -30,7 +30,9 @@ from contextlib import asynccontextmanager
 from services.comparator_service import ComparatorService
 from fastapi.responses import JSONResponse
 from services.scaler_service import ScalerService
+import logging
 
+logger = logging.getLogger("uvicorn.error")
 
 
 
@@ -50,12 +52,7 @@ async def lifespan(app: FastAPI):
     # 1 - fetch metrics
     use_local_fetcher = os.getenv("USE_LOCAL_FETCHER", "false").lower() == "true"
 
-    if use_local_fetcher:
-        fetcher = MetricsFetcherLocalTest()
-        print("Using MetricsFetcherLocalTest for local testing")
-    else:
-        fetcher = VictoriaMetricsFetcher(env_config.url_for_metrics)
-        print("Using VictoriaMetricsFetcher for production/dev")
+    fetcher = VictoriaMetricsFetcher(env_config.url_for_metrics)
 
 
     collector = MetricsCollector(
@@ -111,7 +108,7 @@ async def lifespan(app: FastAPI):
         node_id=env_config.uuid_node,
         keda_scaler_address="http://autoscaler-service:5001"
     )
-    scheduler.add_job(scaler_service.scale, 'interval', minutes=1)
+    # scheduler.add_job(scaler_service.scale, 'interval', minutes=1)
 
     scheduler.start()
 
@@ -123,6 +120,8 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
+app = FastAPI(lifespan=lifespan)
+
 
 async def get_storage_service() -> StorageService:
     env_config = EnvConfig()
@@ -131,34 +130,32 @@ async def get_storage_service() -> StorageService:
 
 
 
-if __name__ == "__main__":
-    import logging
-
-    logger = logging.getLogger("uvicorn.error")
-
-    app = FastAPI(lifespan=lifespan)
+#if __name__ == "__main__":
 
 
-    @app.get("/keda-metrics")
-    async def keda_metrics(storage_service: StorageService = Depends(get_storage_service)):
-        """
-        Endpoint для Keda, возвращает последнее предсказанное значение CPU из базы данных.
-        """
-        latest_prediction = await storage_service.get_prediction(
-            node=EnvConfig().uuid_node,
-            timestamp=datetime.now()
-        )
 
-        if latest_prediction is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Предсказания не найдены")
 
-        cpu_prediction = latest_prediction.metrics.get('cpu')
 
-        if cpu_prediction is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CPU предсказание не найдено")
 
-        return JSONResponse({"cpu": cpu_prediction})
+@app.get("/keda-metrics")
+async def keda_metrics(storage_service: StorageService = Depends(get_storage_service)):
+    """
+    Endpoint для Keda, возвращает последнее предсказанное значение CPU из базы данных.
+    """
+    latest_prediction = await storage_service.get_latest_prediction(
+        node=EnvConfig().uuid_node,
+    )
 
+    if latest_prediction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Предсказания не найдены")
+
+    cpu_prediction = latest_prediction.metrics.get('cpu')
+
+    if cpu_prediction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CPU предсказание не найдено")
+
+    logger.info("metric has been pulling by keda:",latest_prediction)
+    return JSONResponse({"cpu": cpu_prediction})
 
 async def get_predictor_service() -> PredictorService:
     env_config = EnvConfig()

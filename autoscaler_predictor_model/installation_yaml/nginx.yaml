@@ -24,10 +24,10 @@ spec:
         resources:
           requests:
             memory: "64Mi"  # Минимально необходимая память
-            cpu: "250m"      # Минимально необходимый CPU
+            cpu: "10m"      # Минимально необходимый CPU
           limits:
             memory: "256Mi"  # Максимально допустимая память
-            cpu: "500m"      # Максимально допустимый CPU
+            cpu: "50m"      # Максимально допустимый CPU
       volumes:
       - name: nginx-config-volume
         configMap:

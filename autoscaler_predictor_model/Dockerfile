@@ -11,7 +11,13 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application's code
-COPY . /usr/src/app
+COPY main.py .
+COPY config.py .
+COPY .env .
+COPY models/ ./models/
+COPY metrics/ ./metrics/
+COPY services/ ./services/
+COPY storage/ ./storage/
 
 # Make port 5000 available to the world outside this container
 EXPOSE 5000
@@ -19,5 +25,5 @@ EXPOSE 5000
 # Define environment variable
 ENV NAME AUTOSCALER_MODEL_SERVER
 
-# Run model_server.py when the container launches
-CMD ["python", "model_server.py"]
+# Указываем команду для запуска приложения
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5001"]
