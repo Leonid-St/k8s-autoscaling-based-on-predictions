@@ -9,7 +9,7 @@ async def _query_(query: str,
                   ):
     params = {
         "query": query,
-        #"step": step
+        "step": step
     }
     base_url = "http://localhost:8428/prometheus"
     async with aiohttp.ClientSession() as session:
@@ -35,7 +35,7 @@ async def _query_(query: str,
 
 
 async def main():
-    node_count_query = 'count(kube_node_status_condition{condition="Ready", status="true"})'
+    node_count_query = 'count(kube_pod_status_ready{condition="true",pod=~"simple-app-.*"})[1m]'
     result = await _query_(node_count_query)
     print("Полученный результат:", result)
 

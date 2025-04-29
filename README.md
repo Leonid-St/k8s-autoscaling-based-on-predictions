@@ -5,3 +5,7 @@
 - `/metrics/<model_type>` - комбинированная метрика (макс. из CPU/RAM)
 - `/metrics/<model_type>/cpu` - метрика только по CPU
 - `/metrics/<model_type>/memory` - метрика только по RAM
+
+
+
+k8s-autoscale-controller
