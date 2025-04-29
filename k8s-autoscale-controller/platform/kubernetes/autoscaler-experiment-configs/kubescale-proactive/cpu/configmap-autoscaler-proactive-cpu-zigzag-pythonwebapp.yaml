@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autoscaler-pythonwebapp-config
+data:
+  auto_scaler_conf: |
+    prometheus_namespace: cm
+    prometheus_svc_name: prometheus-release-server
+    pushgateway_namespace: cm
+    pushgateway_svc_name: prometheus-release-pushgateway
+    notification_email_receiver: abc@gmail.com
+    kubernetes:
+      namespace: default
+      deployment: pythonwebapp
+      container: pythonwebapp
+    strategy:
+      reactive_scaling_enabled: true
+      proactive_scaling_enabled: true
+      proactive_downscaling_enabled: false
+      proactive_mode_forecast_only: false
+      delay_proactive_mode_by_min_train_data_history: false
+      eval_time_interval_sec: 30
+      min_instances: 1
+      max_instances: 15
+      downscale_cooldown_period_min: 1
+      downscale_after_predictive_scaleup_cooldown_period_min: 3
+      preempt_period_min: 3
+      downscale_max_percentage: 20
+    forecasting:
+      forecast_creation_interval_mins: 30
+      forecast_period_mins: 60
+      send_forecasts: true
+    metrics:
+      load_metric_name: cpu_usage
+      scaling_metric_target_value: 0.70
+      threshold_breach_tolerance: 0.05
+      min_train_data_history_hours: 4
+      max_train_data_history_hours: 8
+      step_size_mins: 1

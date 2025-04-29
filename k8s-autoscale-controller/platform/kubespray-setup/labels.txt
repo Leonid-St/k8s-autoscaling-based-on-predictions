@@ -1,0 +1,33 @@
+kubectl get nodes --show-labels
+
+
+node1   Ready    master   9d    v1.16.2   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=node1,kubernetes.io/os=linux,node-role.kubernetes.io/master=
+node2   Ready    master   9d    v1.16.2   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=node2,kubernetes.io/os=linux,node-role.kubernetes.io/master=
+node3   Ready    <none>   9d    v1.16.2   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=node3,kubernetes.io/os=linux
+node4   Ready    <none>   9d    v1.16.2   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=node4,kubernetes.io/os=linux
+node5   Ready    <none>   9d    v1.16.2   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=node5,kubernetes.io/os=linux
+
+
+# Remote node labels
+
+kubectl label nodes node1 nodetype=main
+kubectl label nodes node2 webappnodetype=spring-webapp-node
+kubectl label nodes node3 webappnodetype=spring-webapp-node
+
+kubectl label nodes node4 webappnodetype=spring-webapp-node
+kubectl label nodes node5 webappnodetype=spring-webapp-node
+kubectl label nodes node3 datanodetype=mongodb-node
+kubectl label nodes node4 datanodetype=mongodb-node
+kubectl label nodes node5 datanodetype=mongodb-node
+
+kubectl label node node6 webappnodetype=spring-webapp-node
+kubectl label node node7 webappnodetype=spring-webapp-node
+kubectl label node node8 webappnodetype=spring-webapp-node
+kubectl label node node9 webappnodetype=spring-webapp-node
+
+# Local node labels
+
+kubectl label nodes minikube nodetype=main
+kubectl label nodes minikube appnodetype=non-main
+kubectl label nodes minikube webappnodetype=spring-webapp-node
+kubectl label nodes minikube datanodetype=mongodb-node

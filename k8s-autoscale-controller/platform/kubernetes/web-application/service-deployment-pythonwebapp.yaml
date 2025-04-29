@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pythonwebapp
+  labels:
+    app: pythonwebapp
+spec:
+  selector:
+    app: pythonwebapp
+  clusterIP: None
+#  type: NodePort
+  ports:
+    - name: http
+    # Inside the cluster, what port does the service expose - relevant for clusterip?
+      port: 9101
+    # Which port on the node is the service available through - relevant for nodeport?
+#      nodePort: 31234
+    # Which port do pods selected by this service expose?
+      targetPort: 9101
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pythonwebapp
+spec:
+  selector:
+    matchLabels:
+      app: pythonwebapp
+  replicas: 3
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: pythonwebapp
+    spec:
+      imagePullSecrets:
+        - name: gcr-json-key
+      containers:
+        - name: pythonwebapp
+          image: leonidusername5432/web_app:latest
+          imagePullPolicy: Always
+          resources:
+            # ensure limits are the same as requests !!
+            # the scheduler doesn't guarantee that the requested memory will be honored
+            limits:
+              memory: "350Mi"
+              cpu: "250m"
+            requests:
+              memory: "350Mi"
+              cpu: "250m"
+          env:
+            - name: PUBLISH_PORT
+              value: "9101"
+
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 9101
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9101
+            failureThreshold: 30
+            periodSeconds: 2
+            initialDelaySeconds: 0
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9101
+            failureThreshold: 30
+            periodSeconds: 2
+            initialDelaySeconds: 0
+
+      nodeSelector:
+        webappnodetype: spring-webapp-node
+
+      restartPolicy: Always

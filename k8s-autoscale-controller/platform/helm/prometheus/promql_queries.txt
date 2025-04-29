@@ -1,0 +1,108 @@
+--------------------------------------------------
+--------------- EXPERIMENT METRICS ---------------
+--------------------------------------------------
+REQUESTS PER SECOND
+SINGLE
+sum(rate(envoy_cluster_upstream_rq{envoy_cluster_name=\"$webapp_name\"}[1m]))
+AVERAGE OF LAST 6 CYCLES
+(sum(rate(envoy_cluster_upstream_rq{envoy_cluster_name=\"$webapp_name\"}[1m])) + sum(rate(envoy_cluster_upstream_rq{envoy_cluster_name=\"$webapp_name\"}[1m] offset 30m)) + sum(rate(envoy_cluster_upstream_rq{envoy_cluster_name=\"$webapp_name\"}[1m] offset 60m)) + sum(rate(envoy_cluster_upstream_rq{envoy_cluster_name=\"$webapp_name\"}[1m] offset 90m)) + sum(rate(envoy_cluster_upstream_rq{envoy_cluster_name=\"$webapp_name\"}[1m] offset 120m)) + sum(rate(envoy_cluster_upstream_rq{envoy_cluster_name=\"$webapp_name\"}[1m] offset 150m)) ) / 6
+
+NUMBER OF RUNNING PODS
+SINGLE
+count(count by (pod) (eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]].*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" }))
+AVERAGE OF LAST 6 CYCLES
+(count(count by (pod) (eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]].*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" })) +count(count by (pod) (eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]].*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 30m)) +count(count by (pod) (eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]].*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 60m)) +count(count by (pod) (eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]].*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 90m)) +count(count by (pod) (eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]].*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 120m)) +count(count by (pod) (eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]].*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 150m))) / 6
+
+95TH PERCENTILE LATENCY
+SINGLE
+histogram_quantile(0.95, rate( envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=\"$webapp_name\"}[1m]))
+AVERAGE OF LAST 6 CYCLES
+(histogram_quantile(0.95, rate( envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=\"$webapp_name\"}[1m])) +histogram_quantile(0.95, rate( envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=\"$webapp_name\"}[1m] offset 30m)) +histogram_quantile(0.95, rate( envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=\"$webapp_name\"}[1m] offset 60m)) +histogram_quantile(0.95, rate( envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=\"$webapp_name\"}[1m] offset 90m)) +histogram_quantile(0.95, rate( envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=\"$webapp_name\"}[1m] offset 120m)) +histogram_quantile(0.95, rate( envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=\"$webapp_name\"}[1m] offset 150m))) / 6
+
+
+AVG POD CPU USAGE
+SINGLE
+sum(eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" }) /
+sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"})
+AVERAGE OF LAST 6 CYCLES
+(sum(eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" })/ sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"}) +sum(eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 30m)/ sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 30m) +sum(eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 60m)/ sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 60m) +sum(eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 90m)/ sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 90m) +sum(eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 120m)/ sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 120m) +sum(eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 150m)/ sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 150m))/6
+
+
+NUMBER OF IDLE CPU CORES
+SINGLE
+sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"}
+- eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" })
+AVERAGE OF LAST 6 CYCLES
+(sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"}- eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" }) +sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 30m- eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 30m ) +sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"}  offset 60m- eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 60m ) +sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 90m- eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 90m ) +sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 120m- eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 120m ) +sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\"} offset 150m- eagle_pod_container_resource_usage_cpu_cores{ pod=~\"[[webapp_name]]-.*\", container!=\"POD\", container=~\"[[webapp_name]]\", phase=\"Running\" } offset 150m )) / 6
+
+
+---------------------------------------------
+--------------- OTHER METRICS ---------------
+---------------------------------------------
+
+Evaluation metrics
+
+Quality of service
+- quality of service
+	- 95th percentile of latency of <> measured with:
+
+- time during which quality of service deteriorated
+	- time when latency > latency threshold
+
+- number of 500 responses
+	-
+
+Resource usage
+- actual idle CPU
+	(total resources available - total resources used)
+
+- average idle CPU
+	(total resources available - total resources used)
+	---------------------------------------------------------------
+	total_resources_ available
+
+- aggregated idle CPU
+	(total resources available - total resources used) * number of instances
+	----------------------------------------------------------------------------------------------
+	total_resources_ available
+
+- total CPU usage / cost
+	total resources available
+
+
+Prometheus queries
+
+total resources available = (sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running"  })
+
+total resources used = sum(eagle_pod_container_resource_usage_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running" }))
+
+number of instances = count(count by (pod) (eagle_pod_container_resource_usage_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running"}))
+
+So the final formula is:
+
+- total absolute idle CPU
+
+sum(eagle_pod_container_resource_requests_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running"}
+- eagle_pod_container_resource_usage_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running" }
+)
+
+- relative Idle CPU
+sum((eagle_pod_container_resource_requests_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running"}
+- eagle_pod_container_resource_usage_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running" }
+) / eagle_pod_container_resource_requests_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running"}
+)
+
+
+- average absolute idle CPU
+
+avg(eagle_pod_container_resource_requests_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running"}
+- eagle_pod_container_resource_usage_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running" }
+)
+
+- average relative idle CPU (0 to 1)
+
+avg((eagle_pod_container_resource_requests_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running"}
+- eagle_pod_container_resource_usage_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running" }
+) / eagle_pod_container_resource_requests_cpu_cores{ pod=~"[[webapp_name]]-.*", container!="POD", container=~"[[webapp_name]]", phase="Running"}
+)
+

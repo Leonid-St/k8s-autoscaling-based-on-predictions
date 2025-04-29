@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy
+  labels:
+    app: envoy
+spec:
+  type: NodePort
+  ports:
+    - port: 8200
+      targetPort: 8200
+      protocol: TCP
+      nodePort: 30820
+      name: work
+    - port: 8201
+      targetPort: 8201
+      protocol: TCP
+      nodePort: 30821
+      name: stats
+    - port: 8202
+      targetPort: 8202
+      protocol: TCP
+      nodePort: 30822
+      name: work2
+    - port: 8203
+      targetPort: 8203
+      protocol: TCP
+      nodePort: 30823
+      name: work3
+
+  selector:
+    app: envoy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envoy
+  labels:
+    app: envoy
+spec:
+  selector:
+    matchLabels:
+      app: envoy
+  template:
+    metadata:
+      labels:
+        app: envoy
+    spec:
+      volumes:
+        - name: envoy-config
+          configMap:
+            name: envoy-config
+      containers:
+        - name: envoy
+          image: envoyproxy/envoy:v1.14-latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "800m"
+            requests:
+              memory: "256Mi"
+              cpu: "300m"
+          volumeMounts:
+            - name: envoy-config
+              mountPath: /etc/envoy/envoy.yaml
+              subPath: envoy.yaml
+          ports:
+            - name: http
+              containerPort: 8200
+            - name: envoy-admin
+              containerPort: 8201
+            - name: http2
+              containerPort: 8202
+            - name: http3
+              containerPort: 8203
+
+      nodeSelector:
+        nodetype: main
+
+      restartPolicy: Always

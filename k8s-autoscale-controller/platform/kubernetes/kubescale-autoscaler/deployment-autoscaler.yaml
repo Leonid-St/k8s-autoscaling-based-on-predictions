@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: autoscaler-pythonwebapp
+  labels:
+    app: autoscaler-pythonwebapp
+spec:
+  selector:
+    app: autoscaler-pythonwebapp
+  # for future integration - custom REST API triggers...
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8432
+      targetPort: 18432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoscaler-pythonwebapp
+spec:
+  selector:
+    matchLabels:
+      app: autoscaler-pythonwebapp
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: autoscaler-pythonwebapp
+    spec:
+      imagePullSecrets:
+        - name: gcr-json-key
+      volumes:
+        - name: autoscaler-pythonwebapp-config
+          configMap:
+            name: autoscaler-pythonwebapp-config
+            items:
+              - key: auto_scaler_conf
+                path: auto_scaler_conf.yaml
+        - name: kube-config
+          configMap:
+            name: kube-config
+      containers:
+        - name: autoscaler-pythonwebapp
+          image: leonidusername5432/kubescaler-controller:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: "1000Mi"
+              cpu: "2500m"
+            requests:
+              memory: "500Mi"
+              cpu: "300m"
+          volumeMounts:
+            - name: autoscaler-pythonwebapp-config
+              mountPath: /conf/autoscaler-pythonwebapp
+            - name: kube-config
+              mountPath: /conf/kube/config
+              subPath: config
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 9301
+          args:
+            - python
+            - /src/controller.py
+          env:
+            - name: KUBECONFIG
+              value: /conf/kube/config
+            - name: AUTOSCALER_CONFIG_FILE
+              value: /conf/autoscaler-pythonwebapp/auto_scaler_conf.yaml
+            - name: EMAIL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: email-secret
+                  key: username
+            - name: EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: email-secret
+                  key: password
+      nodeSelector:
+        nodetype: main
+      restartPolicy: Always

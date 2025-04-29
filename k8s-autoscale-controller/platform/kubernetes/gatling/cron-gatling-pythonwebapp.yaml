@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gatling-pythonwebapp-cron
+spec:
+  concurrencyPolicy: Forbid
+  schedule: "0,30 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          imagePullSecrets:
+            - name: gcr-json-key
+          volumes:
+            - name: results-data
+              hostPath:
+                path: /home/dorian/config/
+                type: DirectoryOrCreate
+            - name: gatling-job-config-vol
+              configMap:
+                name: gatling-job-config
+          containers:
+            - name: gatling-envoy-job
+              image: leonidusername5432/gatling:latest
+              resources:
+                limits:
+                  memory: "5000Mi"
+                  cpu: "900m"
+                requests:
+                  memory: "2000Mi"
+                  cpu: "400m"
+              args:
+                - --simulation
+                - PythonZigZag
+              volumeMounts:
+                - name: results-data
+                  mountPath: /opt/gatling/results
+                - name: gatling-job-config-vol
+                  mountPath: /opt/gatling/user-files/simulations/PythonZigZag.scala
+                  subPath: PythonZigZag.scala
+                - name: gatling-job-config-vol
+                  mountPath: /opt/gatling/user-files/simulations/PythonConstantlyGrowing.scala
+                  subPath: PythonConstantlyGrowing.scala
+                - name: gatling-job-config-vol
+                  mountPath: /opt/gatling/user-files/simulations/PythonSpikyWorkload.scala
+                  subPath: PythonSpikyWorkload.scala
+              env:
+                - name: gatling.testendpoint
+                  value: "http://envoy:8202"
+                - name: JAVA_OPTS
+                  value: -Xms2G -Xmx5G
+
+          restartPolicy: Never
+
+#          nodeSelector:
+#            nodetype: main

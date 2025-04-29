@@ -1,0 +1,64 @@
+# Url to access prometheus
+prometheus:
+  url: http://193.61.36.69
+  port: 31000
+
+replicas: 1
+
+logLevel: 1
+
+rules:
+  default: false
+  custom:
+    - seriesQuery: 'requests_per_second_pythonwebapp{namespace!="", service!=""}'
+      # this metric will appear as "cheesy_goodness" in the custom metrics API
+      resources:
+        overrides:
+          namespace:
+            resource: namespace
+          service:
+            resource: service
+      name: {as: "requests_per_second_pythonwebapp"}
+      metricsQuery: <<.Series>>{<<.LabelMatchers>>}
+
+    - seriesQuery: 'requests_per_second_pythonwebapp2{namespace!="", service!=""}'
+      # this metric will appear as "cheesy_goodness" in the custom metrics API
+      resources:
+        overrides:
+          namespace:
+            resource: namespace
+          service:
+            resource: service
+      name: {as: "requests_per_second_pythonwebapp2"}
+      metricsQuery: <<.Series>>{<<.LabelMatchers>>}
+
+#  - seriesQuery: requests_per_second_pythonwebapp{envoy_cluster_name="pythonwebapp"}
+#    name:
+#      matches: ^(.*)
+#      as: ${1}
+#    metricsQuery: <<.Series>>{<<.LabelMatchers>>}
+#  - seriesQuery: requests_per_second_pythonwebapp2{envoy_cluster_name="pythonwebapp"}
+#    name:
+#      matches: ^(.*)
+#      as: ${1}
+#    metricsQuery: <<.Series>>{<<.LabelMatchers>>}
+
+  existing:
+  external: []
+  # - seriesQuery: '{__name__=~"^some_metric_count$"}'
+  #   resources:
+  #     template: <<.Resource>>
+  #   name:
+  #     matches: ""
+  #     as: "my_external_metric"
+  #   metricsQuery: sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)
+
+hostNetwork:
+  # Specifies if prometheus-adapter should be started in hostNetwork mode.
+  #
+  # You would require this enabled if you use alternate overlay networking for pods and
+  # API server unable to communicate with metrics-server. As an example, this is required
+  # if you use Weave network on EKS
+  enabled: false
+
+#listenPort: 6553

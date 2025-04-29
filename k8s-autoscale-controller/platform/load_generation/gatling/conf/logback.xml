@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%-5level] %logger{15} - %msg%n%rEx</pattern>
+		</encoder>
+		<immediateFlush>false</immediateFlush>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>WARN</level>
+		</filter>
+	</appender>
+
+
+	<!--couldn't get this to log to an external location-->
+	<!--<property name="LOG_DIR" value="{log.dir:-/opt/gatling/results/logs}"/>-->
+	<!--<timestamp key="bySecond" datePattern="yyyyMMdd'T'HHmmss"/>-->
+	<!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
+        <!--<file>${LOG_DIR}/logfile-${bySecond}.txt</file>-->
+		<!--<append>true</append>-->
+		<!--<encoder>-->
+			<!--<Pattern>%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</Pattern>-->
+		<!--</encoder>-->
+	<!--</appender>-->
+
+	<!-- uncomment and set to DEBUG to log all failing HTTP requests -->
+	<!-- uncomment and set to TRACE to log all HTTP requests -->
+	<logger name="io.gatling.http.engine.response" level="TRACE" />
+
+	<root level="WARN">
+		<appender-ref ref="CONSOLE" />
+		<!--<appender-ref ref="FILE" />-->
+	</root>
+
+</configuration>

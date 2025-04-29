@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autoscaler-webapp-config
+data:
+  auto_scaler_conf: |
+    # the location of prometheus REST API
+    prometheus_namespace: cm
+    prometheus_svc_name: prometheus-release-server
+    pushgateway_namespace: cm
+    pushgateway_svc_name: prometheus-release-pushgateway
+    notification_email_receiver: abc@gmail.com
+    kubernetes:
+      # name of the space in which the resource is
+      namespace: default
+      # name of the deployment
+      deployment: headlesswebapp
+      # in case the resources pods have two containers, what is the name of one of the containers
+      container: headlesswebapp
+
+    strategy:
+      # whether to scale based on reactive indications
+      reactive_scaling_enabled: true
+      # whether to scale based on proactive indications
+      proactive_scaling_enabled: true
+      # whether to down scale based on proactive indications -> usually it doesn't make sense to downscale if you expect
+      # that in eg. 10 minutes the
+      proactive_downscaling_enabled: false
+      # whether to only email forecasts
+      proactive_mode_forecast_only: false
+      # whether to delay making proactive decision until min_train_data_history_hours of time passes
+      # useful for cases where you expect that the pattern changed so much that the potentially available
+      #  training data will be missing
+      delay_proactive_mode_by_min_train_data_history: false
+      # how often to run the control loop evaluation method, in seconds, min is 30
+      eval_time_interval_sec: 30
+      # minimum number of instances (pods) for that deployment
+      min_instances: 1
+      # maximum number of instances (pods) for that deployment
+      max_instances: 15
+      # how long to wait before a downscaling decision
+      downscale_cooldown_period_min: 1
+      # how long to wait before a downscaling decision
+      downscale_after_predictive_scaleup_cooldown_period_min: 3
+      # the period you want to make a scaling decision for
+      # eg. now you want to make a decision on what number of instances you should have in 30 seconds
+      preempt_period_min: 3
+      # maximum percentage that the auto-scaler can downscale at once eg. from 10 to 5 nodes
+      downscale_max_percentage: 20
+
+    forecasting:
+      # how often to forecast future values of the metric, in seconds (eg. 1800s = 30min)
+      forecast_creation_interval_mins: 30
+      # for how long in future to forecast
+      forecast_period_mins: 60
+      # email to send forecasts to
+      send_forecasts: true
+
+    metrics:
+      # metrics names are
+      # 1) metrics with unlimited range:
+      #    a) app_requests_per_second_per_instance
+      #    b) app_request_latency_per_instance
+      # 2) metrics with range from 0 to 1:
+      #    a) cpu_usage_per_pod
+      #    b) memory_usage
+      load_metric_name: requests_per_second # must be same as scaling metric
+      # scaling_metric_name: cpu_usage_per_pod # must be same as scaling metric
+      # eg. for CPU usage, this means all instances  should have CPU usage of maximally 0.8
+      # ie. if there are 5 instances, the total CPI usage would be 4.0
+      scaling_metric_target_value: 550
+      # if the threshold is breached on the other side by less than this amount, don't do anything
+      threshold_breach_tolerance: 75
+      # how much past data (metrics) have to be gathered (in seconds) - 43200 means 12 hours, 1 hour is 3600
+      min_train_data_history_hours: 2
+      # don't use more than this data for training - 604,800 means 7 days (3600 * 24 * 7). Max value is 14 days
+      max_train_data_history_hours: 8
+      # resolution of metrics - ie. when getting a time-series of metrics
+      # for which interval to get each of the metrics in minutes, minimal value is 1
+      # Gluon TS doesn't support less than 1 minute frequency
+      step_size_mins: 1
+
+    custom_params:
+      cluster_name: headlesswebapp

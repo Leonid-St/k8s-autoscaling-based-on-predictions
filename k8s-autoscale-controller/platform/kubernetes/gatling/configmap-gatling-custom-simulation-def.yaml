@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatling-job-config
+  namespace: default
+data:
+  PythonZigZag.scala: |
+    import io.gatling.core.Predef._
+    import io.gatling.http.Predef._
+    import scala.concurrent.duration._
+    import util.Random
+
+    class PythonZigZag extends Simulation {
+      val feeder = Iterator.continually(Map("id" -> (Random.nextInt(2500000)),
+                                            "id2"-> (Random.nextInt(2500000)) ) );
+      val body: String = Random.alphanumeric.take(10000).mkString;
+      val scn = scenario("Single big request")
+        .feed(feeder)
+        .exec(
+          http("POST1")
+            .post("/prime/${id}")
+          .body(StringBody(session => """{ "myContent": """" + body + """" }"""))
+        )
+        .exec(
+          http("POST2")
+            .post("/hash/${id2}")
+          .body(StringBody(session => """{ "myContent": """" + body + """" }"""))
+        )
+      val url = sys.env.getOrElse("gatling.testendpoint", "http://localhost:9100");
+      val httpProtocol = http
+        .baseUrl(url)
+        .acceptHeader("*/*")
+        .header("Keep-Alive", "150")
+        .header("Content-Type", "application/json");
+      setUp(
+        scn.inject(
+            constantUsersPerSec(80) during (2 minutes),
+            constantUsersPerSec(120) during (2 minutes),
+            constantUsersPerSec(160) during (2 minutes),
+            constantUsersPerSec(200) during (2 minutes),
+            constantUsersPerSec(150) during (2 minutes),
+            constantUsersPerSec(110) during (2 minutes),
+            constantUsersPerSec(155) during (2 minutes),
+            constantUsersPerSec(190) during (2 minutes),
+            constantUsersPerSec(235) during (2 minutes),
+            constantUsersPerSec(265) during (2 minutes),
+            constantUsersPerSec(205) during (2 minutes),
+            constantUsersPerSec(140) during (2 minutes)
+        ).protocols(httpProtocol)
+      )
+    }
+
+  PythonConstantlyGrowing.scala: |
+    import io.gatling.core.Predef._
+    import io.gatling.http.Predef._
+    import scala.concurrent.duration._
+    import util.Random
+
+    class PythonConstantlyGrowing extends Simulation {
+      val feeder = Iterator.continually(Map("id" -> (Random.nextInt(2500000)),
+                                            "id2"-> (Random.nextInt(2500000)) ) );
+      val body: String = Random.alphanumeric.take(10000).mkString;
+      val scn = scenario("Single big request")
+        .feed(feeder)
+        .exec(
+          http("POST1")
+            .post("/prime/${id}")
+          .body(StringBody(session => """{ "myContent": """" + body + """" }"""))
+        )
+
+      val url = sys.env.getOrElse("gatling.testendpoint", "http://localhost:9100");
+
+      val httpProtocol = http
+        .baseUrl(url)
+        .acceptHeader("*/*")
+        .header("Keep-Alive", "150")
+        .header("Content-Type", "application/json");
+
+      setUp(
+        scn.inject(
+            constantUsersPerSec(30) during (4 minutes),
+            constantUsersPerSec(90) during (4 minutes),
+            constantUsersPerSec(150) during (4 minutes),
+            constantUsersPerSec(210) during (4 minutes),
+            constantUsersPerSec(270) during (4 minutes),
+            constantUsersPerSec(330) during (4 minutes),
+            rampUsersPerSec(330) to 90 during (2 minutes)
+        ).protocols(httpProtocol)
+      )
+    }
+
+  PythonSpikyWorkload.scala: |
+    import io.gatling.core.Predef._
+    import io.gatling.http.Predef._
+    import scala.concurrent.duration._
+    import util.Random
+
+    class PythonSpikyWorkload extends Simulation {
+      val feeder = Iterator.continually(Map("id" -> (Random.nextInt(2500000)),
+                                            "id2"-> (Random.nextInt(2500000)) ) );
+      val body: String = Random.alphanumeric.take(10000).mkString;
+      val scn = scenario("Single big request")
+        .feed(feeder)
+        .exec(
+          http("POST1")
+            .post("/prime/${id}")
+          .body(StringBody(session => """{ "myContent": """" + body + """" }"""))
+        )
+
+      val url = sys.env.getOrElse("gatling.testendpoint", "http://localhost:9100");
+
+      val httpProtocol = http
+        .baseUrl(url)
+        .acceptHeader("*/*")
+        .header("Keep-Alive", "150")
+        .header("Content-Type", "application/json");
+
+      setUp(
+        scn.inject(
+            rampUsersPerSec(20) to 50 during (180 seconds),
+            rampUsersPerSec(50) to 80 during (150 seconds),
+            rampUsersPerSec(80) to 350 during (90 seconds),
+            rampUsersPerSec(350) to 150 during (2 minutes),
+            rampUsersPerSec(150) to 20 during (4 minutes),
+            rampUsersPerSec(20) to 50 during (180 seconds),
+            rampUsersPerSec(50) to 80 during (150 seconds),
+            rampUsersPerSec(80) to 350 during (90 seconds),
+            rampUsersPerSec(350) to 150 during (2 minutes),
+            rampUsersPerSec(150) to 20 during (4 minutes)
+        ).protocols(httpProtocol)
+      )
+    }
