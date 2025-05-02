@@ -139,7 +139,7 @@ The high level algorithm behind KubeScale is the following:
 
 ### Performance of auto-scalers
 
-Example of KubeScale and other auto-scalers in action shown through metrics produced using the related [platform for evaluation of auto-scalers](https://github.com/dorianbg/kubescale-platform):
+Example of KubeScale and other auto-scalers in action shown through metrics produced using the related [platform for evaluation of auto-scalers]:
 
 ![Grafana evaluation of auto-scalers](img/Example-Grafana-Dashboard.jpg)
 
