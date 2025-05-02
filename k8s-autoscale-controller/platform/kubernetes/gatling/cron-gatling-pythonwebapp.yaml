@@ -24,11 +24,11 @@ spec:
               image: leonidusername5432/gatling:latest
               resources:
                 limits:
-                  memory: "5000Mi"
-                  cpu: "900m"
+                  memory: "10000Mi"
+                  cpu: "1800m"
                 requests:
-                  memory: "2000Mi"
-                  cpu: "400m"
+                  memory: "4000Mi"
+                  cpu: "800m"
               args:
                 - --simulation
                 - PythonZigZag

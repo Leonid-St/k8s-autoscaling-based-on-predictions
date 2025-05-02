@@ -56,11 +56,11 @@ spec:
           imagePullPolicy: Always
           resources:
             limits:
-              memory: "512Mi"
-              cpu: "800m"
+              memory: "1024Mi"
+              cpu: "1600m"
             requests:
-              memory: "256Mi"
-              cpu: "300m"
+              memory: "512Mi"
+              cpu: "600m"
           volumeMounts:
             - name: envoy-config
               mountPath: /etc/envoy/envoy.yaml

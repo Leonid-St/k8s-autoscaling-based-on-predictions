@@ -47,11 +47,11 @@ spec:
           imagePullPolicy: Always
           resources:
             limits:
-              memory: "1000Mi"
-              cpu: "2500m"
+              memory: "2000Mi"
+              cpu: "5000m"
             requests:
-              memory: "500Mi"
-              cpu: "300m"
+              memory: "1000Mi"
+              cpu: "600m"
           volumeMounts:
             - name: autoscaler-pythonwebapp-config
               mountPath: /conf/autoscaler-pythonwebapp
