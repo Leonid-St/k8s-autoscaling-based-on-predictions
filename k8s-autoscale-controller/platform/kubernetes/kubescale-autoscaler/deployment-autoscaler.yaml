@@ -32,6 +32,9 @@ spec:
       imagePullSecrets:
         - name: gcr-json-key
       volumes:
+        - name: experiment-logs-storage
+          persistentVolumeClaim:
+            claimName: experiment-logs-pvc
         - name: autoscaler-pythonwebapp-config
           configMap:
             name: autoscaler-pythonwebapp-config
@@ -58,6 +61,8 @@ spec:
             - name: kube-config
               mountPath: /conf/kube/config
               subPath: config
+            - name: experiment-logs-storage # Должно совпадать с именем тома в 'volumes'
+              mountPath: /experiment_logs   # Путь внутри контейнера, куда монтировать том
           ports:
             - name: http
               protocol: TCP
