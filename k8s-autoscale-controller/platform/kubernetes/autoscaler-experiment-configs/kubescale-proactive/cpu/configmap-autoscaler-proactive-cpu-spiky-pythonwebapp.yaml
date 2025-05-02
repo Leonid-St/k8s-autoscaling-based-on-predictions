@@ -4,7 +4,7 @@ metadata:
   name: autoscaler-pythonwebapp-config
 data:
   auto_scaler_conf: |
-    prometheus_namespace: cm
+    prometheus_namespace: default
     prometheus_svc_name: prometheus-release-server
     pushgateway_namespace: cm
     pushgateway_svc_name: prometheus-release-pushgateway

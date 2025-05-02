@@ -5,7 +5,7 @@ metadata:
 data:
   auto_scaler_conf: |
     # the location of prometheus REST API
-    prometheus_namespace: cm
+    prometheus_namespace: default
     prometheus_svc_name: prometheus-release-server
     pushgateway_namespace: cm
     pushgateway_svc_name: prometheus-release-pushgateway
