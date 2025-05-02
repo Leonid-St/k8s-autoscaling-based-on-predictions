@@ -51,7 +51,7 @@ Targeting a lower resource usage ensures resources are sufficiently over-provisi
 
 ```yaml
 # namespace and service name of Prometheus - we get the REST API host/port using this information
-prometheus_namespace: cm
+prometheus_namespace: default
 prometheus_svc_name: prometheus-release-server
 # namespace and service name of the prometheus push gateway - used for storing the state of the autoscaler
 pushgateway_namespace: cm

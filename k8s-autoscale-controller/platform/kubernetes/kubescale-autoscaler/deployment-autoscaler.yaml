@@ -43,7 +43,7 @@ spec:
             name: kube-config
       containers:
         - name: autoscaler-pythonwebapp
-          image: leonidusername5432/kubescaler-controller:latest
+          image: leonidusername5432/kubescale-controller:0.0.1
           imagePullPolicy: Always
           resources:
             limits:

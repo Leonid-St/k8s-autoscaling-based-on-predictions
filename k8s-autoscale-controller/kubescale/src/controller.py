@@ -1,6 +1,6 @@
-from platform import config
+from kubernetes import config
 from utils.kubernetes_util import KubernetesUtil, PodWrapper
-from kubescale.src.utils.prometheus_util import MetricWrapper
+from utils.prometheus_util import MetricWrapper
 from utils.controller_utils import *
 import time
 from math import ceil, floor
@@ -10,7 +10,7 @@ from typing import List, Optional
 import os
 import yaml
 from yaml import FullLoader
-from src.metrics.metric_src import MetricSource
+from metrics.metric_src import MetricSource
 from utils.ml_utils import generate_forecast, build_model
 from gluonts.model.forecast import Forecast
 import logging

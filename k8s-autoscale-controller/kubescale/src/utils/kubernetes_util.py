@@ -1,5 +1,5 @@
 # API - controls the number of instances of a deployment/replica set/stateful set
-from platform import client
+from kubernetes import client
 from typing import List
 
 

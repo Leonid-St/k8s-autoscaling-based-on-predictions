@@ -1,5 +1,5 @@
-from utils.email_util import send_email
-from utils.ml_utils import plot_forecast
+from email_util import send_email
+from ml_utils import plot_forecast
 from enum import Enum
 from datetime import datetime
 import pandas as pd
