@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: autoscaler-pythonwebapp
+  name: autoscaler-operator
   labels:
-    app: autoscaler-pythonwebapp
+    app: autoscaler-operator
 spec:
   selector:
-    app: autoscaler-pythonwebapp
+    app: autoscaler-operator
   # for future integration - custom REST API triggers...
   ports:
     - name: http
@@ -17,17 +17,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: autoscaler-pythonwebapp
+  name: autoscaler-operator
 spec:
   selector:
     matchLabels:
-      app: autoscaler-pythonwebapp
+      app: autoscaler-operator
   replicas: 1
   strategy: {}
   template:
     metadata:
       labels:
-        app: autoscaler-pythonwebapp
+        app: autoscaler-operator
     spec:
       imagePullSecrets:
         - name: gcr-json-key
@@ -35,9 +35,9 @@ spec:
         - name: experiment-logs-storage
           persistentVolumeClaim:
             claimName: experiment-logs-pvc
-        - name: autoscaler-pythonwebapp-config
+        - name: autoscaler-operator-config
           configMap:
-            name: autoscaler-pythonwebapp-config
+            name: autoscaler-operator-config
             items:
               - key: auto_scaler_conf
                 path: auto_scaler_conf.yaml
@@ -45,7 +45,7 @@ spec:
           configMap:
             name: kube-config
       containers:
-        - name: autoscaler-pythonwebapp
+        - name: autoscaler-operator
           image: leonidusername5432/kubescale-controller:0.0.1
           imagePullPolicy: Always
           resources:
@@ -56,8 +56,8 @@ spec:
               memory: "1000Mi"
               cpu: "600m"
           volumeMounts:
-            - name: autoscaler-pythonwebapp-config
-              mountPath: /conf/autoscaler-pythonwebapp
+            - name: autoscaler-operator-config
+              mountPath: /conf/autoscaler-operator
             - name: kube-config
               mountPath: /conf/kube/config
               subPath: config
@@ -74,7 +74,7 @@ spec:
             - name: KUBECONFIG
               value: /conf/kube/config
             - name: AUTOSCALER_CONFIG_FILE
-              value: /conf/autoscaler-pythonwebapp/auto_scaler_conf.yaml
+              value: /conf/autoscaler-operator/auto_scaler_conf.yaml
             - name: EMAIL_USERNAME
               valueFrom:
                 secretKeyRef:
