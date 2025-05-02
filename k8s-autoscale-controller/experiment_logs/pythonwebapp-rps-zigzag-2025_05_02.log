@@ -7,14 +7,14 @@ Workload type zigzag - from zigzag,ladder,spiky
 Initial num instances is 10
 starting
 NAME                                            READY   UP-TO-DATE   AVAILABLE   AGE
-autoscaler-pythonwebapp                         1/1     1            1           3m26s
-envoy                                           1/1     1            1           3m31s
-grafana-release                                 0/1     1            0           3m33s
-kube-eagle                                      1/1     1            1           3m32s
-prometheus-metrics-adapter-prometheus-adapter   1/1     1            1           3m34s
-prometheus-release-kube-state-metrics           1/1     1            1           3m36s
-prometheus-release-prometheus-pushgateway       1/1     1            1           3m36s
-pythonwebapp                                    3/3     3            3           3m31s
+autoscaler-pythonwebapp                         1/1     1            1           7m50s
+envoy                                           1/1     1            1           30m
+grafana-release                                 1/1     1            1           30m
+kube-eagle                                      1/1     1            1           30m
+prometheus-metrics-adapter-prometheus-adapter   1/1     1            1           30m
+prometheus-release-kube-state-metrics           1/1     1            1           30m
+prometheus-release-prometheus-pushgateway       1/1     1            1           30m
+pythonwebapp                                    3/3     3            3           30m
 deployment.apps "autoscaler-pythonwebapp" deleted
 Name:                          gatling-pythonwebapp-cron
 Namespace:                     default
@@ -64,19 +64,22 @@ Pod Template:
     Optional:        false
   Node-Selectors:    <none>
   Tolerations:       <none>
-Last Schedule Time:  <unset>
-Active Jobs:         <none>
-Events:              <none>
+Last Schedule Time:  Fri, 02 May 2025 18:30:00 +0000
+Active Jobs:         gatling-pythonwebapp-cron-29103510
+Events:
+  Type    Reason            Age   From                Message
+  ----    ------            ----  ----                -------
+  Normal  SuccessfulCreate  19m   cronjob-controller  Created job gatling-pythonwebapp-cron-29103510
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 Starting the workloads with no auto-scaling
-Fri May  2 18:22:43 UTC 2025
+Fri May  2 18:49:56 UTC 2025
 NAME           READY   UP-TO-DATE   AVAILABLE   AGE
-pythonwebapp   3/3     3            3           3m31s
+pythonwebapp   3/3     3            3           30m
 deployment.apps/pythonwebapp scaled
 NAME           READY   UP-TO-DATE   AVAILABLE   AGE
-pythonwebapp   10/10   10           10          5m2s
+pythonwebapp   1/1     1            1           32m
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -209,5 +212,5 @@ data:
         ).protocols(httpProtocol)
       )
     }
-Fri May  2 18:24:14 UTC 2025
+Fri May  2 18:51:26 UTC 2025
 sleeping...

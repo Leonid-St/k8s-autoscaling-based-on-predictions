@@ -121,7 +121,7 @@ dashboards:
               "steppedLine": false,
               "targets": [
                 {
-                  "expr": "sum by (instance) (irate(http_server_requests_seconds_count{instance=~\".*.headlesswebapp.default.svc.cluster.local:9100\", uri=\"/bmark/request/{id}\"}[5m]))",
+                  "expr": "sum by (instance) (irate(http_server_requests_seconds_count{instance=~\".*.pythonwebapp.default.svc.cluster.local:9100\", uri=\"/bmark/request/{id}\"}[5m]))",
                   "refId": "A"
                 }
               ],

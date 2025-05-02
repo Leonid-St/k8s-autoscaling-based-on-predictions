@@ -1438,8 +1438,8 @@
         "options": [
           {
             "selected": false,
-            "text": "headlesswebapp",
-            "value": "headlesswebapp"
+            "text": "pythonwebapp",
+            "value": "pythonwebapp"
           },
           {
             "selected": false,
@@ -1452,7 +1452,7 @@
             "value": "pythonwebapp2"
           }
         ],
-        "query": "headlesswebapp,pythonwebapp,pythonwebapp2",
+        "query": "pythonwebapp,pythonwebapp,pythonwebapp2",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"

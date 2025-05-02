@@ -14,9 +14,9 @@ data:
       # name of the space in which the resource is
       namespace: default
       # name of the deployment
-      deployment: headlesswebapp
+      deployment: pythonwebapp
       # in case the resources pods have two containers, what is the name of one of the containers
-      container: headlesswebapp
+      container: pythonwebapp
 
     strategy:
       # whether to scale based on reactive indications
@@ -81,4 +81,4 @@ data:
       step_size_mins: 1
 
     custom_params:
-      cluster_name: headlesswebapp
+      cluster_name: pythonwebapp
