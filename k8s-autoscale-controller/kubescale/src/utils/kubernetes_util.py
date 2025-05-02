@@ -55,6 +55,14 @@ class KubernetesUtil:
     @staticmethod
     def get_service_ip_and_port(namespace_name: str, service_name: str):
         v1 = client.CoreV1Api()
-        port = v1.read_namespaced_service(name=service_name, namespace=namespace_name).spec.ports[0].node_port
-        ip = [x.address for x in (v1.list_node().items[0].status._addresses) if x.type == 'InternalIP'][0]
+        service = v1.read_namespaced_service(name=service_name, namespace=namespace_name)
+        # Получаем clusterIP сервиса
+        ip = service.spec.cluster_ip
+        # Получаем первый порт сервиса (не nodePort)
+        port = service.spec.ports[0].port
+        # Проверяем, что IP не "None" (для Headless сервисов)
+        if ip is None or ip.lower() == "none":
+            # Для Headless сервисов можно попробовать DNS имя: service_name.namespace_name.svc.cluster.local
+            # Но для простоты пока вернем ошибку или придумаем другую логику
+            raise ValueError(f"Service {service_name} in namespace {namespace_name} is Headless (no clusterIP). Cannot determine IP.")
         return {"ip": ip, "port": port}
