@@ -424,6 +424,12 @@ kubectl get pods -w
 docker build -t leonidusername5432/autoscaler-predictor-model:latest .
 ```
 
+with platform linux
+
+```bash
+docker buildx build --platform linux/amd64 -t leonidusername5432/kubescale-controller:0.0.1 .
+```
+
 ```bash
 docker login
 ```

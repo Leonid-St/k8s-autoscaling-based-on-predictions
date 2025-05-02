@@ -19,7 +19,7 @@ spec:
       targetPort: 9101
       protocol: TCP
 ---
-apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pythonwebapp
@@ -44,11 +44,11 @@ spec:
             # ensure limits are the same as requests !!
             # the scheduler doesn't guarantee that the requested memory will be honored
             limits:
-              memory: "350Mi"
-              cpu: "250m"
+              memory: "2000Mi"
+              cpu: "1000m"
             requests:
-              memory: "350Mi"
-              cpu: "250m"
+              memory: "1400Mi"
+              cpu: "1000m"
           env:
             - name: PUBLISH_PORT
               value: "9101"
@@ -74,7 +74,7 @@ spec:
             periodSeconds: 2
             initialDelaySeconds: 0
 
-      nodeSelector:
-        webappnodetype: spring-webapp-node
+      # nodeSelector:
+      #   webappnodetype: spring-webapp-node
 
       restartPolicy: Always
