@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: autoscaler-pythonwebapp-config
+  name: autoscaler-operator-config
 data:
   auto_scaler_conf: |
     # the location of prometheus REST API
