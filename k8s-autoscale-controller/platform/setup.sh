@@ -9,6 +9,14 @@ helm repo add kube-eagle https://raw.githubusercontent.com/cloudworkz/kube-eagle
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 
+
+# helm install local-path-provisioner local-path/local-path-provisioner \
+#   --namespace default \
+#   --set storageClass.defaultClass=true \
+#   --set nodePathMap[0].node=DEFAULT_NODE \
+#   --set nodePathMap[0].paths[0]="/opt/local-path-provisioner"
+
+  
 # Установка Prometheus monitoring operator
 helm install prometheus-release prometheus-community/prometheus \
   -f platform/helm/prometheus/values.yaml \
@@ -61,6 +69,9 @@ kubectl apply -f platform/kubernetes/gatling/cron-gatling-pythonwebapp.yaml
 
 # Add a KubeConfig configmap - this contains the contents of the KUBE_CONFIG file and is necessary for the auto-scaler to be able to talk with the cluster
 kubectl apply -f platform/kubernetes/secrets/kube-config.yaml
+
+#Add experement lof pvc
+kubectl apply -f platform/kubernetes/kubescale-autoscaler/experiment-logs-pvc.yaml
 
 # Deploy the configuration for the KubeScale auto-scaler
 kubectl apply -f platform/kubernetes/kubescale-autoscaler/configmap-autoscaler-webapp.yaml

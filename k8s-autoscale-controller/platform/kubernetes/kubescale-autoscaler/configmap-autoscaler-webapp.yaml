@@ -8,8 +8,8 @@ data:
     prometheus_namespace: default
     prometheus_svc_name: prometheus-release-server
     pushgateway_namespace: default
-    pushgateway_svc_name: prometheus-release-pushgateway
-    notification_email_receiver: abc@gmail.com
+    pushgateway_svc_name: prometheus-release-prometheus-pushgateway
+    notification_email_receiver: leonidstepanovdb@gmail.com
     kubernetes:
       # name of the space in which the resource is
       namespace: default

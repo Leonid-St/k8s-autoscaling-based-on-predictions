@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: experiment-logs-pvc # Имя нашего PVC
+  namespace: default        # Убедитесь, что это то же пространство имен, где работает ваш автоскейлер
+spec:
+  accessModes:
+    - ReadWriteOnce         # Доступен для чтения/записи одним узлом (стандартный режим)
+  resources:
+    requests:
+      storage: 1Gi            # Запрашиваем 1 Гигабайт хранилища (можно изменить)
+  # storageClassName: ""      # Раскомментируйте и укажите имя, если у вас есть конкретный StorageClass.
+                              # Если оставить закомментированным или удалить, будет использован StorageClass по умолчанию (если он есть). 

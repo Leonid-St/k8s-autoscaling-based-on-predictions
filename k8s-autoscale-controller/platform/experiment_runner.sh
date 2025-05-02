@@ -15,6 +15,6 @@ mkdir -p experiment_logs
 # - Spiky - 15
 
 #Example of a run:
-#./experiment_runner.sh pythonwebapp cpu spiky 15
-#./experiment_runner.sh pythonwebapp rps zigzag 10
-#./experiment_runner.sh pythonwebapp rps ladder 14
+#./platform/experiment_runner.sh pythonwebapp cpu spiky 15
+#./platform/experiment_runner.sh pythonwebapp rps zigzag 10
+#./platform/experiment_runner.sh pythonwebapp rps ladder 14
