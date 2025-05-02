@@ -54,7 +54,7 @@ Targeting a lower resource usage ensures resources are sufficiently over-provisi
 prometheus_namespace: default
 prometheus_svc_name: prometheus-release-server
 # namespace and service name of the prometheus push gateway - used for storing the state of the autoscaler
-pushgateway_namespace: cm
+pushgateway_namespace: default
 pushgateway_svc_name: prometheus-release-pushgateway
 # email address of the person receiving the scaling events
 notification_email_receiver: abc@gmail.com

@@ -6,6 +6,7 @@ kubectl apply -f platform/kubernetes/storage/local-path.yaml
 # Добавь нужный репозиторий, так как stable больше не используется напрямую
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add kube-eagle https://raw.githubusercontent.com/cloudworkz/kube-eagle-helm-chart/master
+helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 
 # Установка Prometheus monitoring operator
@@ -13,22 +14,19 @@ helm install prometheus-release prometheus-community/prometheus \
   -f platform/helm/prometheus/values.yaml \
   --namespace "$NAMESPACE_VAR" \
   --create-namespace \
-  --version 25.18.0 \
-  --debug
+  --version 25.18.0 
 
 # Установка Prometheus custom metrics adapter
 helm install prometheus-metrics-adapter prometheus-community/prometheus-adapter \
   -f platform/helm/custom-metrics-prometheus-adapter/values.yaml \
   --namespace "$NAMESPACE_VAR" \
-  --version 4.9.1 \
-  --debug
+  --version 4.9.1 
 
 # Установка Grafana
 helm install grafana-release grafana/grafana \
   -f platform/helm/grafana/values.yaml \
   --namespace "$NAMESPACE_VAR" \
-  --version 7.3.10 \
-  --debug
+  --version 7.3.10 
 
 # Установка kube-eagle
 helm install kube-eagle kube-eagle/kube-eagle \
@@ -62,7 +60,7 @@ kubectl apply -f platform/kubernetes/gatling/configmap-gatling-custom-simulation
 kubectl apply -f platform/kubernetes/gatling/cron-gatling-pythonwebapp.yaml
 
 # Add a KubeConfig configmap - this contains the contents of the KUBE_CONFIG file and is necessary for the auto-scaler to be able to talk with the cluster
-kubectl apply -f platform/kubernetes/secrets/kube-config-configmap.yaml
+kubectl apply -f platform/kubernetes/secrets/kube-config.yaml
 
 # Deploy the configuration for the KubeScale auto-scaler
 kubectl apply -f platform/kubernetes/kubescale-autoscaler/configmap-autoscaler-webapp.yaml

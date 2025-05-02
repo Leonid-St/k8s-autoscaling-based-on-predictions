@@ -7,7 +7,7 @@ data:
     # the location of prometheus REST API
     prometheus_namespace: default
     prometheus_svc_name: prometheus-release-server
-    pushgateway_namespace: cm
+    pushgateway_namespace: default
     pushgateway_svc_name: prometheus-release-pushgateway
     notification_email_receiver: abc@gmail.com
     kubernetes:
