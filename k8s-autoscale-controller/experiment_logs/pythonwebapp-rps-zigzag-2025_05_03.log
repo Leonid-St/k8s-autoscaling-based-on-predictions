@@ -1,0 +1,357 @@
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+Webapp type is pythonwebapp
+Scaling metric is rps - from cpu/rps
+Workload type zigzag - from zigzag,ladder,spiky
+Initial num instances is 10
+starting
+NAME                                            READY   UP-TO-DATE   AVAILABLE   AGE
+autoscaler-operator                             1/1     1            1           17h
+envoy                                           1/1     1            1           18h
+grafana-release                                 1/1     1            1           18h
+kube-eagle                                      1/1     1            1           18h
+prometheus-metrics-adapter-prometheus-adapter   1/1     1            1           18h
+prometheus-release-kube-state-metrics           1/1     1            1           18h
+prometheus-release-prometheus-pushgateway       1/1     1            1           18h
+pythonwebapp                                    10/10   10           10          18h
+deployment.apps "autoscaler-operator" deleted
+Name:                          gatling-pythonwebapp-cron
+Namespace:                     default
+Labels:                        <none>
+Annotations:                   <none>
+Schedule:                      0,30 * * * *
+Concurrency Policy:            Forbid
+Suspend:                       False
+Successful Job History Limit:  3
+Failed Job History Limit:      1
+Starting Deadline Seconds:     <unset>
+Selector:                      <unset>
+Parallelism:                   <unset>
+Completions:                   <unset>
+Pod Template:
+  Labels:  <none>
+  Containers:
+   gatling-envoy-job:
+    Image:      leonidusername5432/gatling:latest
+    Port:       <none>
+    Host Port:  <none>
+    Args:
+      --simulation
+      PythonZigZag
+    Limits:
+      cpu:     1800m
+      memory:  10000Mi
+    Requests:
+      cpu:     800m
+      memory:  4000Mi
+    Environment:
+      gatling.testendpoint:  http://envoy:8202
+      JAVA_OPTS:             -Xms2G -Xmx5G
+    Mounts:
+      /opt/gatling/results from results-data (rw)
+      /opt/gatling/user-files/simulations/PythonConstantlyGrowing.scala from gatling-job-config-vol (rw,path="PythonConstantlyGrowing.scala")
+      /opt/gatling/user-files/simulations/PythonSpikyWorkload.scala from gatling-job-config-vol (rw,path="PythonSpikyWorkload.scala")
+      /opt/gatling/user-files/simulations/PythonZigZag.scala from gatling-job-config-vol (rw,path="PythonZigZag.scala")
+  Volumes:
+   results-data:
+    Type:          HostPath (bare host directory volume)
+    Path:          /home/dorian/config/
+    HostPathType:  DirectoryOrCreate
+   gatling-job-config-vol:
+    Type:            ConfigMap (a volume populated by a ConfigMap)
+    Name:            gatling-job-config
+    Optional:        false
+  Node-Selectors:    <none>
+  Tolerations:       <none>
+Last Schedule Time:  Sat, 03 May 2025 12:30:00 +0000
+Active Jobs:         gatling-pythonwebapp-cron-29104590
+Events:
+  Type    Reason            Age                From                Message
+  ----    ------            ----               ----                -------
+  Normal  SuccessfulDelete  55m                cronjob-controller  Deleted job gatling-pythonwebapp-cron-29104440
+  Normal  SawCompletedJob   55m (x2 over 55m)  cronjob-controller  Saw completed job: gatling-pythonwebapp-cron-29104530, condition: Complete
+  Normal  SuccessfulCreate  50m                cronjob-controller  Created job gatling-pythonwebapp-cron-29104560
+  Normal  SuccessfulDelete  25m                cronjob-controller  Deleted job gatling-pythonwebapp-cron-29104470
+  Normal  SawCompletedJob   25m (x2 over 25m)  cronjob-controller  Saw completed job: gatling-pythonwebapp-cron-29104560, condition: Complete
+  Normal  SuccessfulCreate  20m                cronjob-controller  Created job gatling-pythonwebapp-cron-29104590
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+Starting the workloads with no auto-scaling
+Sat May  3 12:50:06 UTC 2025
+NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+pythonwebapp   10/10   10           10    NAME           READY   UP-TO-DATE   AVAILABLE NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+pythonwebapp   10/10   10           10          18h
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatling-job-config
+  namespace: default
+data:
+  PythonZigZag.scala: |
+    import io.gatling.core.Predef._
+    import io.gatling.http.Predef._
+    import scala.concurrent.duration._
+    import util.Random
+
+    class PythonZigZag extends Simulation {
+      val feeder = Iterator.continually(Map("id" -> (Random.nextInt(2500000)),
+                                            "id2"-> (Random.nextInt(2500000)) ) );
+      val body: String = Random.alphanumeric.take(10000).mkString;
+      val scn = scenario("Single big request")
+        .feed(feeder)
+        .exec(
+          http("POST1")
+            .post("/prime/${id}")
+          .body(StringBody(session => """{ "myContent": """" + body + """" }"""))
+        )
+        .exec(
+          http("POST2")
+            .post("/hash/${id2}")
+          .body(StringBody(session => """{ "myContent": """" + body + """" }"""))
+        )
+      val url = sys.env.getOrElse("gatling.testendpoint", "http://localhost:9100");
+      val httpProtocol = http
+        .baseUrl(url)
+        .acceptHeader("*/*")
+        .header("Keep-Alive", "150")
+        .header("Content-Type", "application/json");
+      setUp(
+        scn.inject(
+            constantUsersPerSec(80) during (2 minutes),
+            constantUsersPerSec(120) during (2 minutes),
+            constantUsersPerSec(160) during (2 minutes),
+            constantUsersPerSec(200) during (2 minutes),
+            constantUsersPerSec(150) during (2 minutes),
+            constantUsersPerSec(110) during (2 minutes),
+            constantUsersPerSec(155) during (2 minutes),
+            constantUsersPerSec(190) during (2 minutes),
+            constantUsersPerSec(235) during (2 minutes),
+            constantUsersPerSec(265) during (2 minutes),
+            constantUsersPerSec(205) during (2 minutes),
+            constantUsersPerSec(140) during (2 minutes)
+        ).protocols(httpProtocol)
+      )
+    }
+
+  PythonConstantlyGrowing.scala: |
+    import io.gatling.core.Predef._
+    import io.gatling.http.Predef._
+    import scala.concurrent.duration._
+    import util.Random
+
+    class PythonConstantlyGrowing extends Simulation {
+      val feeder = Iterator.continually(Map("id" -> (Random.nextInt(2500000)),
+                                            "id2"-> (Random.nextInt(2500000)) ) );
+      val body: String = Random.alphanumeric.take(10000).mkString;
+      val scn = scenario("Single big request")
+        .feed(feeder)
+        .exec(
+          http("POST1")
+            .post("/prime/${id}")
+          .body(StringBody(session => """{ "myContent": """" + body + """" }"""))
+        )
+
+      val url = sys.env.getOrElse("gatling.testendpoint", "http://localhost:9100");
+
+      val httpProtocol = http
+        .baseUrl(url)
+        .acceptHeader("*/*")
+        .header("Keep-Alive", "150")
+        .header("Content-Type", "application/json");
+
+      setUp(
+        scn.inject(
+            constantUsersPerSec(30) during (4 minutes),
+            constantUsersPerSec(90) during (4 minutes),
+            constantUsersPerSec(150) during (4 minutes),
+            constantUsersPerSec(210) during (4 minutes),
+            constantUsersPerSec(270) during (4 minutes),
+            constantUsersPerSec(330) during (4 minutes),
+            rampUsersPerSec(330) to 90 during (2 minutes)
+        ).protocols(httpProtocol)
+      )
+    }
+
+  PythonSpikyWorkload.scala: |
+    import io.gatling.core.Predef._
+    import io.gatling.http.Predef._
+    import scala.concurrent.duration._
+    import util.Random
+
+    class PythonSpikyWorkload extends Simulation {
+      val feeder = Iterator.continually(Map("id" -> (Random.nextInt(2500000)),
+                                            "id2"-> (Random.nextInt(2500000)) ) );
+      val body: String = Random.alphanumeric.take(10000).mkString;
+      val scn = scenario("Single big request")
+        .feed(feeder)
+        .exec(
+          http("POST1")
+            .post("/prime/${id}")
+          .body(StringBody(session => """{ "myContent": """" + body + """" }"""))
+        )
+
+      val url = sys.env.getOrElse("gatling.testendpoint", "http://localhost:9100");
+
+      val httpProtocol = http
+        .baseUrl(url)
+        .acceptHeader("*/*")
+        .header("Keep-Alive", "150")
+        .header("Content-Type", "application/json");
+
+      setUp(
+        scn.inject(
+            rampUsersPerSec(20) to 50 during (180 seconds),
+            rampUsersPerSec(50) to 80 during (150 seconds),
+            rampUsersPerSec(80) to 350 during (90 seconds),
+            rampUsersPerSec(350) to 150 during (2 minutes),
+            rampUsersPerSec(150) to 20 during (4 minutes),
+            rampUsersPerSec(20) to 50 during (180 seconds),
+            rampUsersPerSec(50) to 80 during (150 seconds),
+            rampUsersPerSec(80) to 350 during (90 seconds),
+            rampUsersPerSec(350) to 150 during (2 minutes),
+            rampUsersPerSec(150) to 20 during (4 minutes)
+        ).protocols(httpProtocol)
+      )
+ Sat May  3 21:02:17 UTC 2025
+-----------------Sat May  3 21:02:57 UTC 2025
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+Starting workloads against the Kubescale hybrid autoscaler
+NAME                                            READY   UP-TO-DATE   AVAILABLE   AGE
+envoy                                           1/1     1            1           26h
+grafana-release                                 1/1     1            1           26h
+kube-eagle                                      1/1     1            1           26h
+prometheus-metrics-adapter-prometheus-adapter   1/1     1            1           26h
+prometheus-release-kube-state-metrics           1/1     1            1           26h
+prometheus-release-prometheus-pushgateway       1/1     1            1           26h
+pythonwebapp                                    10/10   10           10          26h
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autoscaler-operator-config
+data:
+  auto_scaler_conf: |
+    prometheus_namespace: default
+    prometheus_svc_name: prometheus-release-server
+    pushgateway_namespace: default
+    pushgateway_svc_name: prometheus-release-pushgateway
+    notification_email_receiver: abc@gmail.com
+    kubernetes:
+      namespace: default
+      deployment: pythonwebapp
+      container: pythonwebapp
+    strategy:
+      reactive_scaling_enabled: true
+      proactive_scaling_enabled: true
+      proactive_downscaling_enabled: false
+      proactive_mode_forecast_only: false
+      delay_proactive_mode_by_min_train_data_history: false
+      eval_time_interval_sec: 30
+      min_instances: 1
+      max_instances: 15
+      downscale_cooldown_period_min: 1
+      downscale_after_predictive_scaleup_cooldown_period_min: 3
+      preempt_period_min: 3
+      downscale_max_percentage: 20
+    forecasting:
+      forecast_creation_interval_mins: 30
+      forecast_period_mins: 60
+      send_forecasts: true
+    metrics:
+      load_metric_name: requests_per_second
+      scaling_metric_target_value: 60
+      threshold_breach_tolerance: 4
+      min_train_data_history_hours: 4
+      max_train_data_history_hours: 8
+      step_size_mins: 1
+    custom_params:
+      cluster_name: pythonwebapp
+configmap/autoscaler-operator-config unchandone with sleeping
+Sun May  4 00:31:18 UTC 202done with sleeping
+Sun May  4 00:31:57 UTC 2025
+NAME                                            READY   UP-TO-DATE   AVAILABLE   AGE
+envoy                                           1/1     1            1           30h
+grafana-release                                 1/1     1            1           30h
+kube-eagle                                      1/1     1            1           30h
+prometheus-metrics-adapter-prometheus-adapter   1/1     1            1           30h
+prometheus-release-kube-state-metrics           1/1     1            1           30h
+prometheus-release-prometheus-pushgateway       1/1     1            1           30h
+pythonwebapp                                    10/10   10           10          30h
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+Starting workloads against the reactive component of Kubescale autoscaler
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autoscaler-operator-config
+data:
+  auto_scaler_conf: |
+    prometheus_namespace: default
+    prometheus_svc_name: prometheus-release-server
+    pushgateway_namespace: default
+    pushgateway_svc_name: prometheus-release-pushgateway
+    notification_email_receiver: abc@gmail.com
+    kubernetes:
+      namespace: default
+      deployment: pythonwebapp
+      container: pythonwebapp
+    strategy:
+      reactive_scaling_enabled: true
+      proactive_scaling_enabled: false
+      proactive_downscaling_enabled: false
+      proactive_mode_forecast_only: false
+      delay_proactive_mode_by_min_train_data_history: false
+      eval_time_interval_sec: 30
+      min_instances: 1
+      max_instances: 15
+      downscale_cooldown_period_min: 1
+      downscale_after_predictive_scaleup_cooldown_period_min: 3
+      preempt_period_min: 3
+      downscale_max_percentage: 20
+    forecasting:
+      forecast_creation_interval_mins: 30
+      forecast_period_mins: 60
+      send_forecasts: true
+    metrics:
+      load_metric_name: requests_per_second
+      scaling_metric_target_value: 60
+      threshold_breach_tolerance: 4
+      min_train_data_history_hours: 4
+      max_train_data_history_hours: 8
+      step_size_mins: 1
+    custom_params:
+      cluster_name: pythonwebapp
+configmap/autoscaler-operator-config unchandone with sleeping
+Sun May  4 04:00:33 UTC 202done with sleeping
+Sun May  4 04:01:13 UTC 2025
+NAME                                            READY   UP-TO-DATE   AVAILABLE   AGE
+envoy                                           1/1     1            1           33h
+grafana-release                                 1/1     1            1           33h
+kube-eagle                                      1/1     1            1           33h
+prometheus-metrics-adapter-prometheus-adapter   1/1     1            1           33h
+prometheus-release-kube-state-metrics           1/1     1            1           33h
+prometheus-release-prometheus-pushgateway       1/1     1            1           33h
+pythonwebapp                                    10/10   10           10          33h
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+Starting workloads against the Kubernetes Horizontal Pod autoscaler (Hdone with sleeping
+NAME                       done with sleeping
+NAME                                            READY   UP-TO-DATE   AVAILABLE   AGE
+envoy                                           1/1     1            1           37h
+grafana-release                                 1/1     1            1           37h
+kube-eagle                                      1/1     1            1           37h
+prometheus-metrics-adapter-prometheus-adapter   1/1     1            1           37h
+prometheus-release-kube-state-metrics           1/1     1            1           37h
+prometheus-release-prometheus-pushgateway       1/1     1            1           37h
+pythonwebapp                                    10/10   10           10          37h
+Sun May  4 07:30:43 UTC 2025
+ended

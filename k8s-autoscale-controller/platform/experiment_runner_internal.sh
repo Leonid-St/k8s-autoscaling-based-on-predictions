@@ -11,7 +11,7 @@ echo "starting"
 kubectl get hpa
 kubectl get deployments
 kubectl delete hpa hpa-$1
-kubectl delete -n default deployment autoscaler-$1
+kubectl delete -n default deployment autoscaler-operator
 kubectl describe cronjob gatling-$1-cron
 
 echo "------------------------------------------------------------------------"
@@ -37,13 +37,13 @@ echo "------------------------------------------------------------------------"
 echo "Starting workloads against the Kubescale hybrid autoscaler"
 # clean up the old deployments
 kubectl delete hpa hpa-$1
-kubectl delete -n default deployment autoscaler-$1
+kubectl delete -n default deployment autoscaler-operator
 kubectl get hpa
 kubectl get deployments
 cat platform/kubernetes/autoscaler-experiment-configs/kubescale-proactive/$2/configmap-autoscaler-proactive-$2-$3-$1.yaml
 kubectl apply -f platform/kubernetes/autoscaler-experiment-configs/kubescale-proactive/$2/configmap-autoscaler-proactive-$2-$3-$1.yaml
 # start the auto-scaler
-kubectl apply -f deployment-autoscaler-$1.yaml
+kubectl apply -f platform/kubescale-autoscaler/deployment-autoscaler-operator.yaml
 ## sleep 209 minutes - in seconds
 echo ""
 date
@@ -51,7 +51,7 @@ echo "sleeping..."
 sleep 12540
 echo "done with sleeping"
 date
-kubectl delete -n default deployment autoscaler-$1
+kubectl delete -n default deployment autoscaler-operator
 kubectl delete hpa hpa-$1
 sleep 15
 kubectl get hpa
@@ -66,8 +66,8 @@ echo "Starting workloads against the reactive component of Kubescale autoscaler"
 cat platform/kubernetes/autoscaler-experiment-configs/kubescale-reactive/$2/configmap-autoscaler-reactive-$2-$3-$1.yaml
 kubectl apply -f platform/kubernetes/autoscaler-experiment-configs/kubescale-reactive/$2/configmap-autoscaler-reactive-$2-$3-$1.yaml
 # start the reactive auto-scaler
-kubectl apply -f deployment-autoscaler-$1.yaml
-kubectl rollout -n default restart deployment autoscaler-$1
+kubectl apply -f platform/kubescale-autoscalerdeployment-autoscaler-operator.yaml
+kubectl rollout -n default restart deployment autoscaler-operator
 ## sleep 209 minutes - in seconds
 echo ""
 date
@@ -75,9 +75,9 @@ echo "sleeping..."
 sleep 12540
 echo "done with sleeping"
 date
-kubectl delete deployment autoscaler-$1
+kubectl delete deployment autoscaler-operator
 kubectl delete hpa hpa-$1
-kubectl delete -n default deployment autoscaler-$1
+kubectl delete -n default deployment autoscaler-operator
 kubectl delete hpa hpa-$1
 sleep 15
 kubectl get hpa
@@ -89,9 +89,9 @@ echo "------------------------------------------------------------------------"
 echo "------------------------------------------------------------------------"
 echo "Starting workloads against the Kubernetes Horizontal Pod autoscaler (HPA)"
 # log the HPA auto-scaler configiguration
-cat hpa/hpa-$2-$3-$1.yaml
+cat platform/kubernates/horizontal-pod-autoscaler/hpa-$2-$1.yaml
 # start the HPA auto-scaler
-kubectl apply -f platform/kubernetes/horizontal-pod-autoscaler/hpa-$2-$3-$1.yaml
+kubectl apply -f platform/kubernetes/horizontal-pod-autoscaler/hpa-$2-$1.yaml
 ## sleep 209 minutes - in seconds
 echo ""
 date

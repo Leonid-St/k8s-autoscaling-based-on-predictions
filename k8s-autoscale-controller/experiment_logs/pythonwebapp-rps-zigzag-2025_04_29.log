@@ -7,7 +7,7 @@ Workload type zigzag - from zigzag,ladder,spiky
 Initial num instances is 10
 starting
 NAME                                   READY   UP-TO-DATE   AVAILABLE   AGE
-autoscaler-pythonwebapp                0/1     1            0           14m
+autoscaler-operator                0/1     1            0           14m
 envoy                                  1/1     1            1           71m
 kube-eagle                             1/1     1            1           14m
 kubernetes-dashboard-api               1/1     1            1           4h58m
@@ -15,7 +15,7 @@ kubernetes-dashboard-auth              1/1     1            1           4h58m
 kubernetes-dashboard-kong              1/1     1            1           4h58m
 kubernetes-dashboard-metrics-scraper   1/1     1            1           4h58m
 kubernetes-dashboard-web               1/1     1            1           4h58m
-deployment.apps "autoscaler-pythonwebapp" deleted
+deployment.apps "autoscaler-operator" deleted
 Name:                          gatling-pythonwebapp-cron
 Namespace:                     default
 Labels:                        <none>

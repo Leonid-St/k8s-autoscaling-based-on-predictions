@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-inspector
+spec:
+  containers:
+  - name: inspector
+    image: busybox
+    command: ["/bin/sh"]
+    args: ["-c", "sleep 3600"]
+    volumeMounts:
+    - mountPath: /mnt/data
+      name: experiment-logs
+  volumes:
+  - name: experiment-logs
+    persistentVolumeClaim:
+      claimName: experiment-logs-pvc
+  restartPolicy: Never
+
+#kubectl exec -it pvc-inspector -- /bin/sh
+#ls /mnt/data
+#kubectl delete pod pvc-inspector

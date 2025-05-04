@@ -142,3 +142,9 @@ Each experiment ran the chosen workload against:
 - 2 - the Kubescale auto-scaler  
 - 3 - just the reactive component of the Kubescale auto-scaler 
 - 4 - the Kubernetes horizontal pod autoscaler
+
+
+
+### experement in background
+
+nohup ./platform/experiment_runner.sh pythonwebapp cpu zigzag 10 > output.log 2>&1 &
