@@ -2,7 +2,7 @@ import requests
 import time
 
 # Укажите URL вашего сервера Nginx
-url = 'http://192.168.49.2:30001'  # Замените на свой URL
+url = 'http://192.168.49.2:30001'
 
 while True:
     try:
