@@ -89,7 +89,7 @@ echo "------------------------------------------------------------------------"
 echo "------------------------------------------------------------------------"
 echo "Starting workloads against the Kubernetes Horizontal Pod autoscaler (HPA)"
 # log the HPA auto-scaler configiguration
-cat platform/kubernates/horizontal-pod-autoscaler/hpa-$2-$1.yaml
+cat platform/kubernetes/horizontal-pod-autoscaler/hpa-$2-$1.yaml
 # start the HPA auto-scaler
 kubectl apply -f platform/kubernetes/horizontal-pod-autoscaler/hpa-$2-$1.yaml
 ## sleep 209 minutes - in seconds
